@@ -7,6 +7,9 @@ const snap = (v) => Math.round(v * 2) / 2;
 const PER_INCH = 4; // lengths are kept to a quarter of an inch
 const fine = (v) => Math.round(v * 12 * PER_INCH) / (12 * PER_INCH); // feet, to that precision
 const money = (n) => '$' + Math.round(n || 0).toLocaleString('en-US');
+// A phone-sized window, upright or on its side, gets its own layout; a finger gets bigger handles.
+const narrowScreen = matchMedia('(max-width: 700px), (max-height: 500px)');
+const coarsePointer = matchMedia('(pointer: coarse)');
 const slug = (s, fallback) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || fallback;
 
 // ---------- feet and inches ----------

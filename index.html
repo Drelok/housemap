@@ -75,6 +75,7 @@ photos/processed/         placed photos, by floor and room</pre>
     </span>
     <strong id="planTitle"></strong>
     <span id="saveState" title="The plan is saved automatically as you work"></span>
+    <div id="toolbar">
     <span class="group" id="tools">
       <button data-tool="select" title="Select, move and pan">Select <kbd>V</kbd></button>
       <span class="menu">
@@ -124,6 +125,7 @@ photos/processed/         placed photos, by floor and room</pre>
         </span>
       </span>
     </span>
+    </div>
   </header>
   <main>
     <section id="left">
@@ -139,6 +141,13 @@ photos/processed/         placed photos, by floor and room</pre>
             <button id="btnGoExterior" class="primary">Go to the exterior sheet</button>
             <button id="btnSizedAlready" title="Stops this warning for this project">It is already right</button>
           </span>
+        </div>
+        <div id="touchBar" hidden>
+          <button id="btnTouchFinish" title="Close the shape being drawn, as the Enter key does">Finish shape</button>
+          <button id="btnTouchBack" title="Take back the last corner, as the Backspace key does">Undo corner</button>
+          <button id="btnTouchSquare" title="Works as holding Shift: a rectangle is drawn square, a line is kept level or upright, and a dragged corner is squared up">Square</button>
+          <button id="btnTouchFree" title="Works as holding Alt: no catching on the grid or on other walls">Free</button>
+          <button id="btnTouchCancel" title="Stop using this tool and go back to Select, as the Esc key does">Cancel</button>
         </div>
         <div id="zoom">
           <button id="btnZoomOut" title="Zoom out (− key)" aria-label="Zoom out">−</button>
@@ -207,6 +216,12 @@ photos/processed/         placed photos, by floor and room</pre>
       </div>
     </aside>
   </main>
+  <nav id="viewBar">
+    <button data-view="plan" title="The plan, or the Issues or House sheet">Plan</button>
+    <button data-view="details" title="The house and this sheet, or the room, door, stairs or fixture that is selected">Details</button>
+    <button data-view="photos" title="The selected photo marker, and the photos waiting to be placed">Photos</button>
+    <button data-view="issues" title="The selected issue, and the list of issues">Issues</button>
+  </nav>
 </div>
 
 <dialog id="tipsDialog">

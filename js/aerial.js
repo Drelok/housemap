@@ -45,7 +45,7 @@ let measureTo = null; // where the scale line would end if clicked now
 
 // Shift keeps a line from `from` level or upright, whichever is closer.
 function straighten(e, from, p) {
-  if (!e.shiftKey) return p;
+  if (!squareKey(e)) return p;
   return Math.abs(p.x - from.x) > Math.abs(p.y - from.y) ? { x: p.x, y: from.y } : { x: from.x, y: p.y };
 }
 

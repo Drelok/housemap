@@ -189,6 +189,7 @@ function addMarker(x, y, dir) {
   sel = { type: 'photo', id: ph.id };
   setTool('select');
   showSide('photos');
+  revealPanel();
 }
 
 async function returnFile(ph) {
@@ -469,6 +470,16 @@ function renderPopover() {
   }
   pop.hidden = false;
   const at = new DOMPoint(ph.x, ph.y).matrixTransform(svg.getScreenCTM());
+  // On a phone it lies across the plan, at the top or the bottom, whichever is away from the marker.
+  if (narrowScreen.matches) {
+    const box = $('#stage').getBoundingClientRect();
+    pop.hidden = !box.width;
+    pop.style.width = Math.min(420, box.width - 16) + 'px';
+    pop.style.left = box.left + 8 + 'px';
+    pop.style.top = (at.y > box.top + box.height / 2 ? box.top + 8 : Math.max(box.top + 8, box.bottom - pop.offsetHeight - 60)) + 'px';
+    return;
+  }
+  pop.style.width = '';
   // The preview sits behind the marker, on the side away from where its arrow points, so that it
   // never covers the arrow or the handle that turns it.
   // With several photos it keeps clear of where their arrows point on the whole, so that it stays

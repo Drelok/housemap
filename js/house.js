@@ -187,6 +187,7 @@ function showCheckIssue(i) {
   if ($('#tipsDialog').open) $('#tipsDialog').close();
   goTo({ floorId: i.floorId, sel: { type: 'issue', id: i.id }, points: [i] });
   showSide('issues');
+  revealPanel();
 }
 
 // ---------- the House sheet ----------

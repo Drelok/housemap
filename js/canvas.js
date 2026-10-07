@@ -36,6 +36,15 @@ const defaultView = () => (floor().kind === 'exterior' ? { x: -40, y: -40, w: 30
 
 let cursor = null; // last pointer position, in feet
 
+// Shift and Alt for a screen with no keyboard: the Square and Free switches on the touch bar.
+// They stay on until the tool changes.
+const held = { square: false, free: false };
+const squareKey = (e) => e.shiftKey || held.square;
+const freeKey = (e) => e.altKey || held.free;
+
+// Handles, pins and photo markers are bigger where the pointer is a finger.
+const grip = () => (coarsePointer.matches && !printWidth ? 1.7 : 1);
+
 // ---------- zoom ----------
 const ZOOM_FULL = 10; // pixels to the foot at 100%: the scale at which the grid squares become 1 ft
 const viewCentre = () => ({ x: view.x + view.w / 2, y: view.y + (view.w * canvasAspect()) / 2 });
@@ -215,7 +224,7 @@ function photoSvg(ph, u, on) {
     const head = `<polygon points="${tx},${ty} ${bx - s * 5.5 * u},${by + c * 5.5 * u} ${bx + s * 5.5 * u},${by - c * 5.5 * u}"/>`;
     arrows += `<line x1="${ph.x}" y1="${ph.y}" x2="${bx}" y2="${by}"/>${aimed ? '' : head}`;
     if (aimed) {
-      handle = `<circle class="handle" data-kind="aim" cx="${tx}" cy="${ty}" r="${11 * u}"><title>Drag to turn the arrow</title></circle>
+      handle = `<circle class="handle" data-kind="aim" cx="${tx}" cy="${ty}" r="${11 * u * grip()}"><title>Drag to turn the arrow</title></circle>
         <g class="${cls} aimHead">${head}</g>`;
     }
   }
@@ -224,11 +233,12 @@ function photoSvg(ph, u, on) {
   // A marker holding several photos shows how many.
   const count = shots.length > 1 ? `<text class="photoNum" x="${ph.x}" y="${ph.y + 3.5 * u}" font-size="${10 * u}">${shots.length}</text>` : '';
   return `<g class="${cls}" data-kind="photo" data-id="${ph.id || ''}">
-    ${arrows}<circle cx="${ph.x}" cy="${ph.y}" r="${(empty ? 9 : shots.length > 1 ? 8 : 7) * u}"/>${slash}${count}</g>${handle}`;
+    ${arrows}<circle cx="${ph.x}" cy="${ph.y}" r="${(empty ? 9 : shots.length > 1 ? 8 : 7) * u * grip()}"/>${slash}${count}</g>${handle}`;
 }
 
 // A handle on every corner of a box; dragging one leaves the opposite corner where it is.
 function cornerHandles(r, u) {
+  u *= grip();
   return [[0, 0], [1, 0], [1, 1], [0, 1]].map(([ix, iy]) => `<rect class="handle resize${ix === iy ? '' : ' rising'}" data-kind="handle" data-ix="${ix}" data-iy="${iy}" x="${r.x + ix * r.w - 6 * u}" y="${r.y + iy * r.h - 6 * u}" width="${12 * u}" height="${12 * u}"/>`).join('');
 }
 
@@ -280,7 +290,7 @@ function renderCanvas() {
         const b = pts[(i + 1) % pts.length];
         const k = a.x === b.x ? 'x' : a.y === b.y ? 'y' : null;
         if (!k || isCurvedWall(pts, i) || Math.hypot(b.x - a.x, b.y - a.y) < 40 * u) return;
-        const [w, h] = k === 'x' ? [6 * u, 16 * u] : [16 * u, 6 * u];
+        const [w, h] = k === 'x' ? [6 * u * grip(), 16 * u] : [16 * u, 6 * u * grip()];
         onTop += `<rect class="handle side ${k === 'x' ? 'upright' : 'level'}" data-kind="side" data-i="${i}" x="${(a.x + b.x) / 2 - w / 2}" y="${(a.y + b.y) / 2 - h / 2}" width="${w}" height="${h}" rx="${3 * u}"><title>Drag to move this wall</title></rect>`;
       });
     }
@@ -288,7 +298,7 @@ function renderCanvas() {
       // no handles
     } else if (on && isPoly(r)) {
       r.points.forEach((p, i) => {
-        onTop += `<circle class="handle${p.curve ? ' curvePt' : ''}" data-kind="vertex" data-i="${i}" cx="${p.x}" cy="${p.y}" r="${6 * u}"><title>${p.curve ? 'The wall curves through this point. Drag to move it; double-click to take it out.' : 'Drag to move this corner; double-click to make the wall curve through it.'}</title></circle>`;
+        onTop += `<circle class="handle${p.curve ? ' curvePt' : ''}" data-kind="vertex" data-i="${i}" cx="${p.x}" cy="${p.y}" r="${6 * u * grip()}"><title>${p.curve ? 'The wall curves through this point. Drag to move it; double-click to take it out.' : 'Drag to move this corner; double-click to make the wall curve through it.'}</title></circle>`;
       });
     } else if (on) {
       onTop += cornerHandles(r, u);
@@ -312,14 +322,14 @@ function renderCanvas() {
   if (drag?.type === 'draw') s += shapeSvg(drag.rect, 'draft');
   if (draft) {
     s += `<path class="draft" d="${outlinePath([...draft.points, draft.cursor], false)}"/>
-      <circle class="start" cx="${draft.points[0].x}" cy="${draft.points[0].y}" r="${6 * u}"/>`;
+      <circle class="start" cx="${draft.points[0].x}" cy="${draft.points[0].y}" r="${6 * u * grip()}"/>`;
   }
 
   plan.issues.forEach((i) => {
     if (i.floorId !== floorId || !layers.issues || !pinned(i)) return;
     const on = sel?.type === 'issue' && sel.id === i.id;
     s += `<g data-kind="pin" data-id="${i.id}">
-      <circle class="pin${on ? ' sel' : ''}${i.status === 'Done' ? ' done' : ''}" cx="${i.x}" cy="${i.y}" r="${10 * u}" fill="${cat(i.category).color}"/>
+      <circle class="pin${on ? ' sel' : ''}${i.status === 'Done' ? ' done' : ''}" cx="${i.x}" cy="${i.y}" r="${10 * u * grip()}" fill="${cat(i.category).color}"/>
       <text class="pinNum" x="${i.x}" y="${i.y + 4 * u}" font-size="${11 * u}">${issueNum(i)}</text>
     </g>`;
   });
@@ -363,6 +373,7 @@ function renderCanvas() {
   renderPopover();
   renderReadout();
   placeUnderlay();
+  renderTouchBar();
 }
 
 // Shows the whole sheet, or just the shapes given.
@@ -517,7 +528,7 @@ function cornerPoint(e, p) {
   const q = snapPoint(p, snapTargets());
   if (tool === 'poly' && (e.ctrlKey || e.metaKey)) q.curve = true; // the wall curves through this one
   const last = draft?.points.at(-1);
-  if (last && e.shiftKey) {
+  if (last && squareKey(e)) {
     const k = Math.abs(p.x - last.x) > Math.abs(p.y - last.y) ? 'y' : 'x';
     q[k] = last[k];
     guides = guides.filter((g) => g.k !== k);
@@ -549,6 +560,11 @@ let pressedAt = null; // where the button went down
 let draggedFar = false; // whether the pointer has left that spot, as it does in a real drag
 
 svg.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch') return touchDown(e);
+  press(e);
+});
+
+function press(e) {
   // The middle button moves the view whatever tool is in use, even part way through a polygon.
   if (e.button === 1 && !drag) {
     e.preventDefault();
@@ -563,10 +579,10 @@ svg.addEventListener('pointerdown', (e) => {
   document.activeElement?.blur(); // preventDefault also stops the click from taking focus off a field
   getSelection()?.removeAllRanges();
   const p = toFeet(e);
-  snapOff = e.altKey;
+  snapOff = freeKey(e);
   const q = tool === 'rect' || tool === 'poly' ? cornerPoint(e, p) : { x: snap(p.x), y: snap(p.y) };
   const hit = e.target.closest('[data-kind]');
-  svg.setPointerCapture(e.pointerId);
+  if (!svg.hasPointerCapture(e.pointerId)) svg.setPointerCapture(e.pointerId);
 
   if (tool === 'rect') {
     drag = { type: 'draw', x0: q.x, y0: q.y, rect: { ...q, w: 0, h: 0 }, targets: snapTargets() };
@@ -576,7 +592,7 @@ svg.addEventListener('pointerdown', (e) => {
     } else {
       const first = draft.points[0];
       const last = draft.points.at(-1);
-      const closing = Math.hypot(p.x - first.x, p.y - first.y) < 10 * feetPerPx() || samePoint(q, first) || samePoint(q, last);
+      const closing = Math.hypot(p.x - first.x, p.y - first.y) < (e.pointerType === 'touch' ? 24 : 10) * feetPerPx() || samePoint(q, first) || samePoint(q, last);
       if (closing && draft.points.length >= 3) return finishPolygon();
       if (!samePoint(q, last)) draft.points.push(q);
     }
@@ -591,6 +607,7 @@ svg.addEventListener('pointerdown', (e) => {
     setTool('select');
     save();
     renderAll();
+    revealPanel();
     $('#inspector input')?.select();
   } else if (tool === 'ruler') {
     // Measuring changes nothing: two clicks show a distance, and a third starts a new one.
@@ -674,9 +691,127 @@ svg.addEventListener('pointerdown', (e) => {
     drag = panFrom(e);
     renderAll();
   }
+}
+
+// ---------- fingers ----------
+// A touch is held back until it is clearly a tap or a drag. A fingertip always wobbles a little,
+// so a tap acts where the finger landed and moves nothing, and a second finger can still turn the
+// touch into a pinch, which zooms and moves the view, before anything has been done.
+const SLOP = 10; // pixels a finger may wander before a touch counts as a drag
+const touches = new Map(); // the fingers on the plan, by pointerId: where each last was
+let waiting = null; // the first finger's press, not acted on yet
+let pinch = null;
+let spent = false; // a finger left over from a pinch does nothing until it is lifted
+
+function touchDown(e) {
+  e.preventDefault();
+  svg.setPointerCapture(e.pointerId);
+  touches.set(e.pointerId, e);
+  if (touches.size === 1) {
+    waiting = e;
+    spent = false;
+    return;
+  }
+  // A second finger ends whatever the first one began, and the two of them hold the view. A shape
+  // being drawn, or a photo marker being aimed, is dropped rather than left half made.
+  waiting = null;
+  if (drag?.type === 'draw' || drag?.type === 'place') {
+    drag = null;
+    guides = [];
+    renderCanvas();
+  } else if (drag) {
+    endDrag();
+  }
+  const [a, b] = touches.values();
+  const mid = { clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2 };
+  pinch = { apart: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, w: view.w, at: toFeet(mid) };
+}
+
+// The two fingers keep the same spot of the plan between them, at the scale they spread it to.
+function pinchTo() {
+  const [a, b] = touches.values();
+  const box = svg.getBoundingClientRect();
+  const apart = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
+  const w = Math.min(3000, Math.max(10, (pinch.w * pinch.apart) / apart));
+  const u = w / (box.width || 1000);
+  view = { x: pinch.at.x - ((a.clientX + b.clientX) / 2 - box.left) * u, y: pinch.at.y - ((a.clientY + b.clientY) / 2 - box.top) * u, w };
+  queueRender();
+}
+
+// Acts on a press that was held back. Dragging something that was not already selected moves the
+// view instead, as dragging empty space does, so that a finger panning across the plan does not
+// pick up the rooms and pins it starts on. A tap selects it; a drag after that moves it.
+function pressTouch(down, tap) {
+  const before = sel && sel.type + sel.id;
+  press(down);
+  const now = sel && sel.type + sel.id;
+  if (!tap && drag && drag.type !== 'pan' && now !== before) drag = panFrom(down);
+}
+
+// Whether a finger's move goes on to be handled as a mouse move would.
+function touchMove(e) {
+  if (!touches.has(e.pointerId)) return false;
+  touches.set(e.pointerId, e);
+  if (pinch) {
+    pinchTo();
+    return false;
+  }
+  if (spent) return false;
+  if (waiting) {
+    if (Math.hypot(e.clientX - waiting.clientX, e.clientY - waiting.clientY) < SLOP) return false;
+    const down = waiting;
+    waiting = null;
+    pressTouch(down, false);
+  }
+  return true;
+}
+
+function touchUp(e) {
+  if (!touches.delete(e.pointerId)) return;
+  if (pinch || spent) {
+    pinch = null;
+    spent = touches.size > 0;
+    return;
+  }
+  const down = waiting;
+  waiting = null;
+  if (down && e.type === 'pointerup') pressTouch(down, true); // a tap
+  endDrag();
+}
+
+// The keys a drawing needs, as buttons over the plan, for a screen with no keyboard: Enter,
+// Backspace and Esc while drawing, and the Shift and Alt switches.
+function renderTouchBar() {
+  const bar = $('#touchBar');
+  const shown = coarsePointer.matches && !onList() && (tool !== 'select' || ['room', 'item', 'opening'].includes(sel?.type));
+  bar.hidden = !shown;
+  if (!shown) return;
+  $('#btnTouchFinish').hidden = !(draft?.points.length >= 3);
+  $('#btnTouchBack').hidden = !draft;
+  $('#btnTouchCancel').hidden = tool === 'select';
+  $('#btnTouchSquare').classList.toggle('active', held.square);
+  $('#btnTouchFree').classList.toggle('active', held.free);
+}
+
+$('#touchBar').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.id === 'btnTouchFinish') return finishPolygon();
+  if (b.id === 'btnTouchBack') {
+    draft.points.pop();
+    if (!draft.points.length) draft = null;
+  } else if (b.id === 'btnTouchSquare') {
+    held.square = !held.square;
+  } else if (b.id === 'btnTouchFree') {
+    held.free = !held.free;
+  } else if (b.id === 'btnTouchCancel') {
+    setTool('select');
+  }
+  renderCanvas();
 });
 
 svg.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'touch' && !touchMove(e)) return;
   if (drag && e.buttons === 0) return endDrag(); // the release was missed, so do not keep dragging
   lastMove = e;
   if (pressedAt && Math.hypot(e.clientX - pressedAt.x, e.clientY - pressedAt.y) > 8) draggedFar = true;
@@ -720,7 +855,7 @@ function pointerTo(e) {
   }
   const p = toFeet(e);
   cursor = p;
-  snapOff = e.altKey;
+  snapOff = freeKey(e);
   if (measure?.length === 1) {
     // One straight line follows the pointer from the first point until the second is clicked.
     // A cut through a room is shown where it would actually be made.
@@ -736,7 +871,7 @@ function pointerTo(e) {
     const c = snapPoint(p, drag.targets);
     let dx = c.x - drag.x0;
     let dy = c.y - drag.y0;
-    if (e.shiftKey) {
+    if (squareKey(e)) {
       guides = [];
       const side = Math.max(Math.abs(dx), Math.abs(dy));
       dx = side * (dx < 0 ? -1 : 1);
@@ -776,7 +911,7 @@ function pointerTo(e) {
     const curve = pts[drag.i].curve;
     // A point on a curve is placed to the quarter inch; a corner keeps to the half-foot grid.
     let c = curve ? snapPoint({ x: p.x + (drag.dx || 0), y: p.y + (drag.dy || 0) }, drag.targets, fine) : snapPoint(p, drag.targets);
-    if (e.shiftKey) {
+    if (squareKey(e)) {
       // Square the corner up with the corners on either side of it.
       const a = pts[(drag.i + pts.length - 1) % pts.length];
       const b = pts[(drag.i + 1) % pts.length];
@@ -815,8 +950,9 @@ function endDrag() {
   renderAll();
 }
 
-svg.addEventListener('pointerup', endDrag);
-svg.addEventListener('pointercancel', endDrag);
+for (const type of ['pointerup', 'pointercancel']) {
+  svg.addEventListener(type, (e) => (e.pointerType === 'touch' ? touchUp(e) : endDrag()));
+}
 
 svg.addEventListener('wheel', (e) => {
   e.preventDefault();
