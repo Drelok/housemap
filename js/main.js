@@ -11,7 +11,16 @@ function openMenu(list) {
   closeMenus(list);
   list.hidden = false;
   list.style.left = '';
+  list.style.top = '';
   const wide = document.documentElement.clientWidth;
+  // On a phone the toolbar scrolls sideways, which would cut the list off, so it is placed on the
+  // window instead, under its button.
+  if (getComputedStyle(list).position === 'fixed') {
+    const at = list.parentNode.getBoundingClientRect();
+    list.style.top = at.bottom + 'px';
+    list.style.left = Math.max(8, Math.min(at.left, wide - list.offsetWidth - 8)) + 'px';
+    return;
+  }
   const over = list.getBoundingClientRect().right - (wide - 8);
   if (wide && over > 0) list.style.left = -over + 'px';
 }
@@ -23,9 +32,11 @@ document.addEventListener('pointerdown', (e) => {
 $('#viewMenu').addEventListener('click', (e) => {
   if (!e.target.closest('.menuBtn')) return; // ticking a box leaves the list open
   const list = $('#viewMenu .menuList');
-  closeMenus(list);
-  list.hidden = !list.hidden;
+  if (list.hidden) openMenu(list);
+  else list.hidden = true;
 });
+
+$('#toolbar').addEventListener('scroll', () => closeMenus());
 
 for (const menu of [$('#fileMenu'), $('#helpMenu')]) {
   menu.addEventListener('click', (e) => {
@@ -43,8 +54,8 @@ $('#tools').addEventListener('click', (e) => {
   const menu = e.target.closest('.menuBtn');
   if (menu) {
     const list = menu.nextElementSibling;
-    closeMenus(list);
-    list.hidden = !list.hidden;
+    if (list.hidden) openMenu(list);
+    else list.hidden = true;
     return;
   }
   const b = e.target.closest('[data-tool]');

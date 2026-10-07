@@ -550,6 +550,10 @@ $('#issueList').addEventListener('click', (e) => {
 
 $('#onlyFloor').addEventListener('change', renderIssues);
 
+// On a phone the side panel keeps out of the way of the plan. Something just placed, or chosen
+// from a list, is brought into view there, as it needs reading or filling in.
+function revealPanel() {}
+
 function showSide(name) {
   for (const b of document.querySelectorAll('#sideTabs button')) b.classList.toggle('active', b.dataset.side === name);
   $('#detailsPanel').hidden = name !== 'details';
@@ -583,6 +587,7 @@ function setTool(t) {
   if (onList() && t !== 'select') return; // nothing can be drawn on a list
   if (t !== 'poly') draft = null;
   pinFor = ''; // placing a pin for an existing issue ends with any change of tool
+  held.square = held.free = false; // the touch bar's Shift and Alt are let go
   guides = [];
   measure = t === 'scale' || t === 'ruler' || t === 'split' ? [] : null;
   measureTo = null;

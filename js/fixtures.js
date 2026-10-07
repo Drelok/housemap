@@ -367,16 +367,16 @@ function stairsUnder(room, p) {
 function itemHandles(it, u) {
   if (itemLockedBy(it)) return ''; // nothing to drag while its room is locked
   if (isStairs(it)) {
-    return it.points.map((p, i) => `<circle class="handle" data-kind="spt" data-i="${i}" cx="${p.x}" cy="${p.y}" r="${6 * u}"><title>Drag to move this ${i && i < it.points.length - 1 ? 'turn' : 'end'} of the stairs</title></circle>`).join('');
+    return it.points.map((p, i) => `<circle class="handle" data-kind="spt" data-i="${i}" cx="${p.x}" cy="${p.y}" r="${6 * u * grip()}"><title>Drag to move this ${i && i < it.points.length - 1 ? 'turn' : 'end'} of the stairs</title></circle>`).join('');
   }
   const from = itemAt(it, 0, it.h / 2);
   const to = itemAt(it, 0, it.h / 2 + 24 * u);
   let s = `<line class="spinStem" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"/>
-    <circle class="handle" data-kind="spin" cx="${to.x}" cy="${to.y}" r="${7 * u}"><title>Drag to turn it. It catches on the direction of the walls; hold Alt to turn it freely.</title></circle>`;
+    <circle class="handle" data-kind="spin" cx="${to.x}" cy="${to.y}" r="${7 * u * grip()}"><title>Drag to turn it. It catches on the direction of the walls; hold Alt to turn it freely.</title></circle>`;
   if (Math.min(it.w, it.h) > 30 * u) {
     for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
       const p = itemAt(it, (sx * it.w) / 2, (sy * it.h) / 2);
-      s += `<rect class="handle resize" data-kind="isize" data-sx="${sx}" data-sy="${sy}" x="${p.x - 5 * u}" y="${p.y - 5 * u}" width="${10 * u}" height="${10 * u}" transform="rotate(${it.rot || 0} ${p.x} ${p.y})"/>`;
+      s += `<rect class="handle resize" data-kind="isize" data-sx="${sx}" data-sy="${sy}" x="${p.x - 5 * u * grip()}" y="${p.y - 5 * u * grip()}" width="${10 * u * grip()}" height="${10 * u * grip()}" transform="rotate(${it.rot || 0} ${p.x} ${p.y})"/>`;
     }
   }
   return s;

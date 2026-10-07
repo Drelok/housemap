@@ -97,6 +97,7 @@ $('#isList').addEventListener('click', (e) => {
   // Choosing one shows it in the side panel to be read or changed; the list stays where it is.
   sel = { type: 'issue', id: i.id };
   renderAll();
+  revealPanel();
 });
 
 // An issue that belongs to no one spot: the roof, the wiring, damp through a whole basement. It
@@ -115,6 +116,7 @@ async function addUnpinnedIssue() {
   save();
   showSide('issues');
   renderAll();
+  revealPanel();
 }
 
 // Lets an issue that has no pin be given one: the Issue tool, on the issue's own sheet, with the
