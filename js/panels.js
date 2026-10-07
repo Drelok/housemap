@@ -550,9 +550,51 @@ $('#issueList').addEventListener('click', (e) => {
 
 $('#onlyFloor').addEventListener('change', renderIssues);
 
-// On a phone the side panel keeps out of the way of the plan. Something just placed, or chosen
-// from a list, is brought into view there, as it needs reading or filling in.
-function revealPanel() {}
+// ---------- the side panel as a sheet along the bottom of a phone ----------
+// It has three heights: folded down to its tabs, about half the screen, and nearly all of it.
+// Dragging the grip at its top sets any height in between, which settles on the nearest of the three.
+const sheetOn = () => getComputedStyle($('#sheetGrip')).display !== 'none';
+const sheetSize = () => ($('aside').classList.contains('low') ? 'low' : $('aside').classList.contains('high') ? 'high' : 'half');
+
+function setSheet(size) {
+  const aside = $('aside');
+  aside.classList.toggle('low', size === 'low');
+  aside.classList.toggle('high', size === 'high');
+  aside.style.height = '';
+}
+
+// The panel keeps out of the way of the plan. Something just placed, or chosen from a list, is
+// brought into view in it, as it needs reading or filling in.
+function revealPanel() {
+  if (sheetOn() && sheetSize() === 'low') setSheet('half');
+}
+
+let sheetDrag = null;
+$('#sheetGrip').addEventListener('pointerdown', (e) => {
+  sheetDrag = { y: e.clientY, h: $('aside').offsetHeight, moved: false };
+  $('#sheetGrip').setPointerCapture(e.pointerId);
+});
+
+$('#sheetGrip').addEventListener('pointermove', (e) => {
+  if (!sheetDrag) return;
+  const dy = e.clientY - sheetDrag.y;
+  if (Math.abs(dy) > 6) sheetDrag.moved = true;
+  if (!sheetDrag.moved) return;
+  const aside = $('aside');
+  aside.classList.remove('low', 'high');
+  aside.style.height = Math.max(60, Math.min($('main').offsetHeight - 40, sheetDrag.h - dy)) + 'px';
+});
+
+for (const type of ['pointerup', 'pointercancel']) {
+  $('#sheetGrip').addEventListener(type, () => {
+    if (!sheetDrag) return;
+    const { moved } = sheetDrag;
+    sheetDrag = null;
+    if (!moved) return setSheet(sheetSize() === 'low' ? 'half' : 'low');
+    const part = $('aside').offsetHeight / $('main').offsetHeight;
+    setSheet(part < 0.25 ? 'low' : part > 0.7 ? 'high' : 'half');
+  });
+}
 
 function showSide(name) {
   for (const b of document.querySelectorAll('#sideTabs button')) b.classList.toggle('active', b.dataset.side === name);
@@ -562,7 +604,9 @@ function showSide(name) {
 }
 
 $('#sideTabs').addEventListener('click', (e) => {
-  if (e.target.dataset.side) showSide(e.target.dataset.side);
+  if (!e.target.dataset.side) return;
+  showSide(e.target.dataset.side);
+  revealPanel();
 });
 
 function renderTitle() {
