@@ -46,6 +46,7 @@ async function startEditor(p) {
   sel = null;
   sheetViews = {};
   onIssues = onHouse = false;
+  $('main').classList.remove('panel'); // a phone opens a project on its plan
   showSide('details');
   $('#aerial').dataset.file = '';
   $('#underlay').removeAttribute('src');

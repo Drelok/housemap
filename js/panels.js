@@ -550,15 +550,46 @@ $('#issueList').addEventListener('click', (e) => {
 
 $('#onlyFloor').addEventListener('change', renderIssues);
 
-// On a phone the side panel keeps out of the way of the plan. Something just placed, or chosen
-// from a list, is brought into view there, as it needs reading or filling in.
-function revealPanel() {}
-
 function showSide(name) {
   for (const b of document.querySelectorAll('#sideTabs button')) b.classList.toggle('active', b.dataset.side === name);
   $('#detailsPanel').hidden = name !== 'details';
   $('#photosPanel').hidden = name !== 'photos';
   $('#issues').hidden = name !== 'issues';
+  renderViewBar();
+}
+
+// ---------- one view at a time on a phone ----------
+// The plan and each of the side panel's three tabs take the whole screen in turn, chosen by the
+// bar along the bottom. Selecting something on the plan stays on the plan, and puts a dot on the
+// button for the view that shows it.
+const viewsOn = () => getComputedStyle($('#viewBar')).display !== 'none';
+
+function showView(name) {
+  $('main').classList.toggle('panel', name !== 'plan');
+  if (name !== 'plan') showSide(name);
+  renderViewBar();
+  if (plan && name === 'plan') renderCanvas();
+}
+
+function renderViewBar() {
+  const panel = $('main').classList.contains('panel');
+  const side = $('#sideTabs .active')?.dataset.side;
+  const holds = sel?.type === 'photo' ? 'photos' : sel?.type === 'issue' ? 'issues' : sel ? 'details' : '';
+  for (const b of document.querySelectorAll('#viewBar button')) {
+    b.classList.toggle('active', panel ? b.dataset.view === side : b.dataset.view === 'plan');
+    b.classList.toggle('has', !panel && b.dataset.view === holds);
+  }
+}
+
+$('#viewBar').addEventListener('click', (e) => {
+  const view = e.target.closest('[data-view]')?.dataset.view;
+  if (view) showView(view);
+});
+
+// Something just placed, or chosen from a list, needs reading or filling in, so on a phone the
+// view that shows it is brought forward.
+function revealPanel() {
+  if (viewsOn()) showView($('#sideTabs .active').dataset.side);
 }
 
 $('#sideTabs').addEventListener('click', (e) => {
@@ -644,4 +675,5 @@ function renderAll() {
   renderAerial();
   renderSizeWarning();
   renderPhotoSummary();
+  renderViewBar();
 }
