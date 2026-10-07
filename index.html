@@ -200,8 +200,10 @@ photos/processed/         placed photos, by floor and room</pre>
       <div id="photosPanel" hidden>
         <div class="actions">
           <button id="btnAddPhotos">Add photos…</button>
+          <button id="btnTakePhoto" class="camera" title="Take a photo with this device's camera; it is added with the photos waiting to be placed">Take photo…</button>
           <button id="btnRefreshPhotos" title="Look again for files copied into photos/unprocessed">Refresh</button>
           <input id="photoInput" type="file" accept="image/*" multiple hidden>
+          <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
           <input id="quoteInput" type="file" accept=".pdf,image/*,.doc,.docx,.xls,.xlsx,.txt,.eml,.msg" hidden>
         </div>
         <p class="note" id="importNote" hidden></p>

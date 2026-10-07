@@ -323,6 +323,7 @@ function photoInspector(ph) {
       ${details}
       <div class="actions">
         <button id="btnAddHere">Add photos…</button>
+        <button id="btnTakeHere" class="camera">Take photo…</button>
         <button class="danger" id="btnDelete">Delete marker</button>
       </div>`;
   }
@@ -336,7 +337,7 @@ function photoInspector(ph) {
       <button id="btnAddMore" title="For another photo taken from this same spot. It gets its own arrow, so it can face a different way.">${sel.adding ? 'Done adding' : 'Add another photo here…'}</button>
       <button id="btnDetach" title="Puts this photo's file back in photos/unprocessed. ${many ? 'The other photos stay on the marker.' : 'The marker stays, ready for another photo.'}">Remove ${many ? 'this ' : ''}photo</button>
     </div>
-    ${sel.adding ? `${picker}<div class="actions"><button id="btnAddHere">Add photos…</button></div>` : ''}
+    ${sel.adding ? `${picker}<div class="actions"><button id="btnAddHere">Add photos…</button><button id="btnTakeHere" class="camera">Take photo…</button></div>` : ''}
     ${details}
     <p class="muted path">${esc(shot.file)}<br>Originally ${esc(shot.original)}</p>
     <div class="actions">
@@ -439,6 +440,22 @@ Move ${strays.length === 1 ? 'it' : 'them'} to photos/unprocessed so ${strays.le
 $('#photoInput').addEventListener('change', (e) => {
   addPhotos(e.target.files);
   e.target.value = '';
+});
+
+// Take photo… opens the camera straight away. Picking several photos at once, as Add photos… does,
+// gets a gallery with no camera in it on Android. An iPhone names every photo from its camera
+// image.jpg, which would be taken for the same photo added twice, so each is named for the moment
+// it was taken instead: photo-2026-10-07-143005.jpg.
+$('#btnTakePhoto').addEventListener('click', () => $('#cameraInput').click());
+
+$('#cameraInput').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  const d = new Date(f.lastModified || Date.now());
+  const two = (n) => String(n).padStart(2, '0');
+  const stamp = `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}${two(d.getSeconds())}`;
+  addPhotos([new File([f], `photo-${stamp}${extOf(f.name) || '.jpg'}`, { type: f.type, lastModified: f.lastModified })]);
 });
 
 $('#photosPanel').addEventListener('dragover', (e) => e.preventDefault());

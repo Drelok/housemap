@@ -339,6 +339,7 @@ $('#inspector').addEventListener('click', async (e) => {
     renderAll();
   }
   if (e.target.id === 'btnAddHere') $('#photoInput').click();
+  if (e.target.id === 'btnTakeHere') $('#cameraInput').click();
   const pick = e.target.closest('[data-attach]');
   if (pick) attachPhoto(selPhoto(), pick.dataset.attach);
   if (e.target.id === 'btnDeleteFloor') {

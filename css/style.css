@@ -376,6 +376,12 @@ dialog label.check { margin-top: 12px; color: #222; font-size: 14px; }
 #touchBar button { box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
 #stage { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
+/* Take photo… is for a device with a camera to hand: a phone or tablet. */
+button.camera { display: none; }
+@media (pointer: coarse) {
+  button.camera { display: inline-block; }
+}
+
 /* A finger: no key letters on the buttons, and room enough on each to tap it. Boxes are typed in
    at 16px so that the phone does not zoom the page in on them. */
 @media (pointer: coarse) {
