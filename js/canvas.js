@@ -31,8 +31,15 @@ function gridStep() {
   return [1, 10, 100].find((s) => s / u >= 10) || 1000;
 }
 
-// The exterior sheet opens zoomed out to lot scale; floors open at room scale.
-const defaultView = () => (floor().kind === 'exterior' ? { x: -40, y: -40, w: 300 } : { x: -5, y: -5, w: 90 });
+// The exterior sheet opens zoomed out to lot scale; floors open at room scale. The scale is the
+// one a computer screen shows, with the sheet about 1040 pixels across, so that a smaller screen
+// shows less of the sheet at the same size of grid square rather than shrinking the squares. It
+// still shows at least a lot's or a house's width.
+const defaultView = () => {
+  const [at, w, least] = floor().kind === 'exterior' ? [-40, 300, 100] : [-5, 90, 30];
+  const across = svg.getBoundingClientRect().width || 1040;
+  return { x: at, y: at, w: Math.min(w, Math.max(least, (w * across) / 1040)) };
+};
 
 let cursor = null; // last pointer position, in feet
 
