@@ -795,15 +795,19 @@ for (const type of ['pointerup', 'pointercancel']) {
   });
 }
 
-// Safari on an iPad zooms the whole page on a pinch, even over the plan where the stylesheet says
-// not to. Its own touch and gesture events can still be refused: while a finger is on the plan, a
-// pinch zooms the plan and not the page.
+// Safari on an iPad scrolls and zooms the whole page under a finger on the plan, even though the
+// stylesheet says not to, and pulling down far enough reloads it. Once it has taken the touch over
+// it cancels it for the plan, which used to end a rectangle where it began. Its own touch and
+// gesture events can still be refused: a finger moving on the plan does not move the page, and
+// while a finger is on the plan a pinch zooms the plan and not the page.
 const onPlan = (t) => $('#stage').contains(t.target);
-for (const type of ['touchstart', 'touchmove']) {
-  document.addEventListener(type, (e) => {
-    if (e.touches.length > 1 && [...e.touches].some(onPlan)) e.preventDefault();
-  }, { passive: false });
-}
+const onDrawing = (t) => svg.contains(t.target);
+document.addEventListener('touchstart', (e) => {
+  if (e.touches.length > 1 && [...e.touches].some(onPlan)) e.preventDefault();
+}, { passive: false });
+document.addEventListener('touchmove', (e) => {
+  if ([...e.touches].some(onDrawing) || (e.touches.length > 1 && [...e.touches].some(onPlan))) e.preventDefault();
+}, { passive: false });
 for (const type of ['gesturestart', 'gesturechange']) {
   document.addEventListener(type, (e) => {
     if (touches.size) e.preventDefault();
@@ -820,6 +824,12 @@ function touchUp(e) {
   const down = waiting;
   waiting = null;
   if (down && e.type === 'pointerup') pressTouch(down, true); // a tap
+  // A touch the browser called off leaves a shape being drawn, or a marker being aimed, unmade.
+  if (e.type === 'pointercancel' && (drag?.type === 'draw' || drag?.type === 'place')) {
+    drag = null;
+    guides = [];
+    return renderCanvas();
+  }
   endDrag();
 }
 

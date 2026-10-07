@@ -1,6 +1,6 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; overscroll-behavior: none; }
 body { font: 14px/1.4 system-ui, "Segoe UI", sans-serif; color: #222; background: #f4f4f2; display: flex; flex-direction: column; }
 
 header { display: flex; align-items: center; gap: 16px; padding: 8px 12px; background: #fff; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
