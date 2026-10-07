@@ -712,6 +712,10 @@ function touchDown(e) {
     spent = false;
     return;
   }
+  if (touches.size === 2) startPinch();
+}
+
+function startPinch() {
   // A second finger ends whatever the first one began, and the two of them hold the view. A shape
   // being drawn, or a photo marker being aimed, is dropped rather than left half made.
   waiting = null;
@@ -764,6 +768,39 @@ function touchMove(e) {
     pressTouch(down, false);
   }
   return true;
+}
+
+// A second finger that lands off the plan, on the side panel or the toolbar, while one is on the
+// plan, joins in the pinch as if it were on the plan too.
+document.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch' || !touches.size || svg.contains(e.target)) return;
+  touchDown(e);
+}, true);
+
+// Moves and releases of a finger that joined from off the plan, in case the browser does not send
+// them to the plan as it was asked to.
+document.addEventListener('pointermove', (e) => {
+  if (touches.has(e.pointerId) && !svg.contains(e.target)) touchMove(e);
+});
+for (const type of ['pointerup', 'pointercancel']) {
+  document.addEventListener(type, (e) => {
+    if (touches.has(e.pointerId) && !svg.contains(e.target)) touchUp(e);
+  });
+}
+
+// Safari on an iPad zooms the whole page on a pinch, even over the plan where the stylesheet says
+// not to. Its own touch and gesture events can still be refused: while a finger is on the plan, a
+// pinch zooms the plan and not the page.
+const onPlan = (t) => $('#stage').contains(t.target);
+for (const type of ['touchstart', 'touchmove']) {
+  document.addEventListener(type, (e) => {
+    if (e.touches.length > 1 && [...e.touches].some(onPlan)) e.preventDefault();
+  }, { passive: false });
+}
+for (const type of ['gesturestart', 'gesturechange']) {
+  document.addEventListener(type, (e) => {
+    if (touches.size) e.preventDefault();
+  });
 }
 
 function touchUp(e) {

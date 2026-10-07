@@ -113,10 +113,16 @@ function idb(mode, fn) {
     open.onupgradeneeded = () => open.result.createObjectStore('kv');
     open.onerror = () => reject(open.error);
     open.onsuccess = () => {
-      const tx = open.result.transaction('kv', mode);
-      const req = fn(tx.objectStore('kv'));
-      tx.oncomplete = () => resolve(req.result);
-      tx.onerror = () => reject(tx.error);
+      // Safari cannot keep a folder handle here and throws instead of failing the request. Left
+      // uncaught, that would leave the promise waiting forever, and whatever awaits it with it.
+      try {
+        const tx = open.result.transaction('kv', mode);
+        const req = fn(tx.objectStore('kv'));
+        tx.oncomplete = () => resolve(req.result);
+        tx.onerror = tx.onabort = () => reject(tx.error);
+      } catch (e) {
+        reject(e);
+      }
     };
   });
 }
