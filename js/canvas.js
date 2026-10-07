@@ -712,9 +712,16 @@ function touchDown(e) {
     spent = false;
     return;
   }
-  // A second finger ends whatever the first one began, and the two of them hold the view.
+  // A second finger ends whatever the first one began, and the two of them hold the view. A shape
+  // being drawn, or a photo marker being aimed, is dropped rather than left half made.
   waiting = null;
-  if (drag) endDrag();
+  if (drag?.type === 'draw' || drag?.type === 'place') {
+    drag = null;
+    guides = [];
+    renderCanvas();
+  } else if (drag) {
+    endDrag();
+  }
   const [a, b] = touches.values();
   const mid = { clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2 };
   pinch = { apart: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, w: view.w, at: toFeet(mid) };
