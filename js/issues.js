@@ -39,6 +39,16 @@ function applySheet() {
   for (const b of document.querySelectorAll('#tools button, #btnFit')) b.disabled = onList();
 }
 
+// What the quotes on an issue come to, while none has been accepted: the one figure, or the lowest
+// to the highest. A declined quote, or one with no amount yet, is left out. Null with none to show.
+function quotedRange(i) {
+  const amounts = quotesOf(i).filter((q) => q.status !== 'Declined' && q.amount > 0).map((q) => q.amount);
+  if (!amounts.length) return null;
+  const low = Math.min(...amounts);
+  const high = Math.max(...amounts);
+  return { count: amounts.length, text: low === high ? money(low) : `${money(low)} to ${money(high)}` };
+}
+
 function issueCard(i) {
   const f = issueFloor(i);
   const shots = i.photoIds.flatMap((id) => shotsOf(plan.photos.find((p) => p.id === id) || {})).filter((s) => s.file);
@@ -58,9 +68,12 @@ function issueCard(i) {
       </div>
       <div class="side">
         <span class="status s-${slug(i.status, 'open')}">${esc(i.status)}</span>
-        <small class="muted">${issueCost(i).quoted ? 'Accepted quote' : 'My estimate'}</small>
-        <b>${issueCost(i).quoted ? money(issueCost(i).low) : estimateText(i)}</b>
-        ${pinned(i) ? `<button data-show="${i.id}" title="Goes to this issue's sheet with its pin selected">Show on plan</button>` : ''}
+        <span class="cost"><small class="muted">${issueCost(i).quoted ? 'Accepted quote' : 'My estimate'}</small><b>${issueCost(i).quoted ? money(issueCost(i).low) : estimateText(i)}</b></span>
+        ${!issueCost(i).quoted && quotedRange(i) ? `<span class="cost"><small class="muted">Quoted (${quotedRange(i).count})</small><b>${quotedRange(i).text}</b></span>` : ''}
+        <span class="cardButtons">
+          ${pinned(i) ? `<button data-show="${i.id}" title="Goes to this issue's sheet with its pin selected">Show on plan</button>` : ''}
+          <button data-add-quote="${i.id}" title="Adds a quote from a contractor to this issue, open in the side panel to fill in">Add professional quote</button>
+        </span>
       </div>
     </article>`;
 }
@@ -117,12 +130,20 @@ $('#issuesSheet').addEventListener('change', (e) => {
 });
 
 $('#isList').addEventListener('click', (e) => {
-  const { openShot, show } = e.target.dataset;
+  const { openShot, show, addQuote: quoteFor } = e.target.dataset;
   if (openShot) return openLightbox(openShot, baseOf(openShot));
   const card = e.target.closest('.issueCard');
   if (!card) return;
   const i = plan.issues.find((x) => x.id === card.dataset.id);
   if (show) return goTo({ floorId: i.floorId, sel: { type: 'issue', id: i.id }, points: [i] });
+  // The same as Add professional quote in the side panel, with the panel brought to the new quote.
+  if (quoteFor) {
+    sel = { type: 'issue', id: i.id };
+    showSide('issues');
+    revealPanel();
+    addQuote(i);
+    return $(`#inspector details[data-quote="${quoteOpen}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
   // Choosing one shows it in the side panel to be read or changed; the list stays where it is.
   sel = { type: 'issue', id: i.id };
   renderAll();

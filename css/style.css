@@ -377,7 +377,8 @@ dialog label.check { margin-top: 12px; color: #222; font-size: 14px; }
 .issueCard .shots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .issueCard .shots img, .issueCard .shots .noPreview { width: 72px; height: 72px; object-fit: cover; border-radius: 4px; background: #eee; cursor: zoom-in; }
 .issueCard .side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; white-space: nowrap; }
-.issueCard .side button { margin-top: auto; font-size: 12px; padding: 3px 8px; }
+.issueCard .side .cardButtons { display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-top: auto; }
+.issueCard .side button { font-size: 12px; padding: 3px 8px; }
 .issueCard .status { padding: 1px 8px; border-radius: 10px; font-size: 12px; background: #fdecea; color: #b3261e; }
 .issueCard .status.s-in-progress { background: #fff8e1; color: #8a6100; }
 .issueCard .status.s-done { background: #e6f4ea; color: #1e6b34; }
@@ -399,7 +400,7 @@ dialog label.check { margin-top: 12px; color: #222; font-size: 14px; }
 .stars button.star:hover { color: #b8860b; }
 .stars .small { margin-left: 8px; }
 .issueCard .quotes { color: #24476b; }
-.issueCard .side small { margin-bottom: -6px; }
+.issueCard .side .cost { display: flex; flex-direction: column; align-items: flex-end; }
 
 /* ---------- printing ---------- */
 #printArea { display: none; }
@@ -533,7 +534,9 @@ button.camera { display: none; }
   #issuesSheet, #houseSheet { padding: 12px; }
   .issueCard { flex-wrap: wrap; }
   .issueCard .side { flex-direction: row; align-items: center; width: 100%; padding-left: 40px; }
-  .issueCard .side button { margin: 0 0 0 auto; }
+  .issueCard .side { flex-wrap: wrap; white-space: normal; }
+  .issueCard .side .cost { align-items: flex-start; }
+  .issueCard .side .cardButtons { flex-direction: row; flex-wrap: wrap; width: 100%; margin: 0; }
   .checkRow { grid-template-columns: 1fr; }
   .checkRow .states { flex-wrap: wrap; }
 }
