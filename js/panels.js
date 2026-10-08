@@ -56,6 +56,21 @@ function issueMoreHtml(i) {
     </details>`;
 }
 
+// The issues this one has to wait for, each with a button to take it off, and a list to add another
+// from. An issue that already waits for this one, directly or through others, is not offered, so
+// the order can never go round in a circle.
+function afterHtml(i) {
+  const before = afterOf(i);
+  const free = plan.issues.filter((x) => x !== i && !before.includes(x) && !waitsFor(x, i)).sort(byIssueNum);
+  const waiting = waitingFor(i);
+  return `<div class="afterField">
+      <label title="Issues that have to be done before this one can be, such as fixing the roof before the ceiling under it">Must be done after</label>
+      <div class="afterList">${before.map((x) => `<span class="chip">#${issueNum(x)} ${esc(x.title)}<button type="button" data-after-drop="${x.id}" title="This issue no longer waits for that one" aria-label="Remove">×</button></span>`).join('') || '<span class="muted small">Nothing: it can be done at any time.</span>'}</div>
+      ${free.length ? `<select id="afterAdd"><option value="">Add an issue it must wait for…</option>${free.map((x) => `<option value="${x.id}">#${issueNum(x)} ${esc(x.title)}</option>`).join('')}</select>` : ''}
+      ${waiting.length ? `<p class="muted small">Waiting for this one: ${waiting.map((x) => `#${issueNum(x)} ${esc(x.title)}`).join(', ')}.</p>` : ''}
+    </div>`;
+}
+
 // Said under Applies to for a pinned issue. A pin on a floor that is in no room and in no wall is
 // often meant for the whole floor, so that is pointed out; whether it is, is for the owner to say.
 // On the exterior sheet a pin out in the open is normal: the yard, the driveway, a fence.
@@ -133,6 +148,7 @@ function renderInspector() {
         ${field('Category', 'issue', 'category', i.category, { options: CATS.map((c) => [c.id, c.label]) })}
         ${field('Status', 'issue', 'status', i.status, { options: STATUSES.map((v) => [v, v]) })}
       </div>
+      ${afterHtml(i)}
       ${field('Description', 'issue', 'description', i.description, { area: true })}
       ${issueMoreHtml(i)}
       <label title="Your own rough idea of what this will cost, as a range. It is what the totals use until a quote is accepted.">My estimate</label>
@@ -270,6 +286,12 @@ $('#inspector').addEventListener('change', (e) => {
     return renderInspector();
   }
   if (e.target.id === 'selLevel') return setLevelDir(selRoom(), e.target.value);
+  if (e.target.id === 'afterAdd' && e.target.value) {
+    const i = selIssue();
+    i.after = [...(i.after || []), e.target.value];
+    save();
+    return renderAll();
+  }
   if (e.target.id === 'issueScope') {
     const i = selIssue();
     const to = e.target.value;
@@ -284,6 +306,14 @@ $('#inspector').addEventListener('change', (e) => {
 });
 
 $('#inspector').addEventListener('click', async (e) => {
+  const drop = e.target.closest('[data-after-drop]')?.dataset.afterDrop;
+  if (drop) {
+    const i = selIssue();
+    i.after = (i.after || []).filter((id) => id !== drop);
+    if (!i.after.length) delete i.after;
+    save();
+    return renderAll();
+  }
   if (e.target.id === 'btnDelete') deleteSelection();
   if (e.target.closest('#btnDuplicate')) duplicateSelection();
   if (e.target.id === 'btnCombine') combineSelection();

@@ -158,6 +158,13 @@ aside { width: 360px; background: #fff; border-left: 1px solid #ddd; display: fl
 .note.issueLink .dot { margin: 0; flex: none; }
 .note.issueLink button { margin-left: auto; font-size: 12px; padding: 2px 8px; }
 .note.issueLink button + button { margin-left: 0; }
+.afterField { margin-bottom: 8px; }
+.afterField .small { margin: 4px 0 0; }
+.afterList { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 6px; }
+.afterList .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 2px 1px 8px; border: 1px solid #bbb; border-radius: 12px; background: #f4f4f2; font-size: 12px; }
+.afterList .chip button { border: 0; background: none; padding: 0 6px; font-size: 14px; line-height: 1; color: #555; }
+.afterList .chip button:hover { color: #b3261e; }
+#afterAdd { display: block; width: 100%; font: inherit; color: #222; padding: 5px 6px; border: 1px solid #bbb; border-radius: 4px; }
 .note.issueLink select { flex: 1 1 200px; min-width: 0; font: inherit; font-size: 12px; padding: 2px 4px; }
 .note.pick { margin: 0 0 8px; background: #e0f2f1; color: #00695c; font-weight: 600; }
 .plan .photo.empty > line:first-child { stroke: #8a8a8a; }
@@ -394,6 +401,7 @@ button.camera { display: none; }
   input, select, textarea, label input:not([type=checkbox]):not([type=radio]):not([type=file]), label select, label textarea { font-size: 16px; }
   input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
   .thumbs div.thumb button { font-size: 13px; padding: 6px 8px; }
+  .afterList .chip button { min-width: 32px; min-height: 32px; }
   .cap .steps button { min-width: 40px; min-height: 36px; }
   #lightbox .cap button { min-height: 40px; padding: 5px 16px; }
 }

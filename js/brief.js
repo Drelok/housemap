@@ -188,12 +188,12 @@ const issueShots = (i) => i.photoIds.map((id) => plan.photos.find((p) => p.id ==
 // the names the photos have in the export; without it they are listed by where they are filed.
 function issuesCsv(issues = plan.issues, photoNames = null) {
   const q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const rows = [['#', 'Floor', 'Room', 'Where', 'Title', 'Category', 'Status', 'My estimate low', 'My estimate high', 'Estimate from', 'Accepted quote', 'Description', ...ISSUE_MORE.map(([, label]) => label), 'Photo', 'Quotes']];
+  const rows = [['#', 'Floor', 'Room', 'Where', 'Title', 'Category', 'Status', 'My estimate low', 'My estimate high', 'Estimate from', 'Accepted quote', 'Must be done after', 'Description', ...ISSUE_MORE.map(([, label]) => label), 'Photo', 'Quotes']];
   for (const i of issues) {
     const f = issueFloor(i);
     const photos = issueShots(i).map(({ shot }) => photoNames?.get(i.id + shot.id) || shot.file);
     rows.push([issueNum(i), issuePlace(i), issueRoom(i)?.name || '', pinned(i) ? spotWords(f, i) : '', i.title, cat(i.category).label, i.status, i.costLow, i.costHigh, ownEstimate(i).priced ? sourceWords(i) : '', issueCost(i).quoted ? issueCost(i).low : '',
-      i.description, ...ISSUE_MORE.map((m) => moreAnswer(i, m)), [...photos, i.photo].filter(Boolean).join('; '), quotesOf(i).map(quoteLine).join('; ')]);
+      afterOf(i).map(issueNum).join('; '), i.description, ...ISSUE_MORE.map((m) => moreAnswer(i, m)), [...photos, i.photo].filter(Boolean).join('; '), quotesOf(i).map(quoteLine).join('; ')]);
   }
   return rows.map((r) => r.map(q).join(',')).join('\r\n');
 }
@@ -238,6 +238,9 @@ function photoWords(ph, shot) {
   return `taken on ${where}, facing ${facingWord(shot.dir)}${ph.note ? `. Note: ${lines(ph.note)}` : ''}`;
 }
 
+// Another issue, named in passing: "issue 27 (Roof inspection)", with "done" where it is.
+const issueRef = (x) => `issue ${issueNum(x)} (${x.title || 'Untitled'}${x.status === 'Done' ? ', done' : ''})`;
+
 // The follow-up questions on an issue, in a few words each, for saying which were left unanswered.
 const MORE_SHORT = { started: 'when it started', frequency: 'how often it happens', worse: 'whether it is getting worse', tried: 'what has been tried', who: 'who would do the work' };
 
@@ -249,6 +252,8 @@ function issueBlock(i, o) {
     '',
     `- **Category:** ${cat(i.category).label}`,
     `- **Status:** ${i.status}`,
+    ...(afterOf(i).length ? [`- **Must be done after:** ${afterOf(i).map(issueRef).join(', ')}`] : []),
+    ...(waitingFor(i).length ? [`- **Waiting for this one:** ${waitingFor(i).map(issueRef).join(', ')}`] : []),
     `- **Where:** ${issueWhere(i)}`,
     ...stackWords(i).map(([label, text]) => `- **${label}:** ${text}`),
   ];
@@ -331,6 +336,7 @@ Written by House Map & Issue Tracker on ${today()} from the owner's own plan of 
 - **Categories:** ${CATS.map((c) => `*${c.label}*: ${CAT_MEANS[c.id]}`).join('. ')}.
 - **Follow-up questions:** each issue can answer ${ISSUE_MORE.map((m) => `"${m[1]}"`).join(', ')}. The answers given are listed under each issue, and the rest are named as not answered.
 - **Status** is Open, In progress or Done.${o.done ? '' : ' Issues marked Done are left out of this brief.'}
+- **Order:** *Must be done after* names the issues the owner says have to be done before an issue can be, such as the roof before the ceiling under it, and *Waiting for this one* names those that wait for it in turn. Follow them to put the work in order; where there are none, the order is open.
 - **Costs** are in US dollars. *My estimate* is a low and a high figure, marked as the owner's own rough guess or as a figure an AI assistant gave earlier. A professional quote that has been accepted replaces it. "Not priced" means nobody has put a figure on it yet; it does not mean it is free.
 ${o.aerialName ? `- **Aerial picture:** \`${o.aerialName}\` is a satellite or aerial picture of the lot, which the owner traced the outline of the house from. It shows what the plans leave out: the yard, patio, driveway, trees, streets and neighbours, and so which way water runs. Its top is the top of the plan pictures.\n` : ''}- **Photos** are in the \`photos\` folder, named after the issue they belong to (\`issue-05-photo-1.jpg\` is the first photo of issue 5), and are small copies of the originals.
 - \`issues.csv\` holds the same issues as a table.

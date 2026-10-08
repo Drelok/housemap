@@ -118,6 +118,12 @@ function scalePlan(p, k, tidy = (v) => v) {
 // The plan as it is written to disk: every length in inches, to the nearest quarter.
 function planFileText(p = plan) {
   const copy = scalePlan(structuredClone(p), 12, (v) => Math.round(v * PER_INCH) / PER_INCH);
+  // An issue that has been deleted, however it went, no longer holds up any other.
+  const ids = new Set(copy.issues.map((i) => i.id));
+  for (const i of copy.issues) {
+    if (i.after) i.after = i.after.filter((id) => ids.has(id));
+    if (!i.after?.length) delete i.after;
+  }
   return JSON.stringify({ version: 5, units: 'inches', ...copy }, null, 2);
 }
 
@@ -269,6 +275,19 @@ function issuePlace(i) {
   const f = plan.floors.find((x) => x.id === i.floorId);
   return !f ? 'Whole house' : pinned(i) ? f.name : `All of ${f.name}`;
 }
+// The order work has to be done in. An issue's `after` lists the issues that must be done before it,
+// such as the roof before the ceiling under it. Issues since deleted are passed over.
+const byIssueNum = (a, b) => issueNum(a) - issueNum(b);
+const afterOf = (i) => (i.after || []).map((id) => plan.issues.find((x) => x.id === id)).filter(Boolean).sort(byIssueNum);
+const waitingFor = (i) => plan.issues.filter((x) => (x.after || []).includes(i.id)).sort(byIssueNum);
+// Whether `a` already has to wait for `b`, directly or through others. If it does, `b` cannot be
+// made to wait for `a`, as neither could then ever be started.
+function waitsFor(a, b, seen = new Set()) {
+  if (seen.has(a.id)) return false;
+  seen.add(a.id);
+  return afterOf(a).some((x) => x === b || waitsFor(x, b, seen));
+}
+
 const costLow = (list) => list.reduce((a, i) => a + issueCost(i).low, 0);
 const costHigh = (list) => list.reduce((a, i) => a + issueCost(i).high, 0);
 const sqft = (n) => Math.round(n).toLocaleString('en-US') + ' sq ft';

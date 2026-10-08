@@ -51,6 +51,7 @@ function issueCard(i) {
         <p class="muted">${where.map(esc).join(' · ')}</p>
         ${i.description ? `<p class="desc">${esc(i.description)}</p>` : ''}
         ${i.photo ? `<p class="desc muted">Photo note: ${esc(i.photo)}</p>` : ''}
+        ${afterOf(i).length ? `<p class="desc muted">After ${afterOf(i).map((x) => `#${issueNum(x)}${x.status === 'Done' ? ' (done)' : ''}`).join(', ')}</p>` : ''}
         ${quotesOf(i).length ? `<p class="desc quotes"><b>Quotes:</b> ${quotesOf(i).map((q) => esc(quoteLine(q))).join(' · ')}</p>` : ''}
         ${shots.length ? `<div class="shots">${shots.map((s) => `<img data-thumb data-photo="${esc(s.file)}" data-open-shot="${esc(s.file)}" alt="" title="${esc(baseOf(s.file))}: open full size">`).join('')}</div>` : ''}
       </div>
