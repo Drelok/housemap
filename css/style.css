@@ -328,6 +328,7 @@ dialog label.check { margin-top: 12px; color: #222; font-size: 14px; }
 #exportAge { color: #777; font-size: 12px; }
 .project span.due { color: #8a6100; font-weight: 600; }
 #printDialog label { color: #222; font-size: 13px; }
+#printSummaryChoices { margin: 2px 0 6px 26px; padding-left: 10px; border-left: 2px solid #ddd; }
 
 /* ---------- zoom buttons, the Find box and the help windows ---------- */
 #zoom { position: absolute; right: 12px; bottom: 12px; display: flex; background: #fff; border-radius: 6px; box-shadow: 0 2px 8px rgba(0, 0, 0, .15); user-select: none; }
@@ -421,6 +422,21 @@ dialog label.check { margin-top: 12px; color: #222; font-size: 14px; }
   article.issue img { display: block; width: 100%; max-height: 2.3in; object-fit: contain; background: #f4f4f2; }
   article.issue figcaption { font-size: 8pt; color: #555; }
   article.issue .noPreview { aspect-ratio: 4 / 3; }
+  /* The house summary: one upright page, in two columns. */
+  .printPage.summary { font-size: 9pt; }
+  .printPage.summary h2 { margin: 8pt 0 3pt; padding-bottom: 1pt; border-bottom: 1.5px solid #24476b; color: #24476b; font-size: 10.5pt; }
+  .printPage.summary table { width: 100%; border-collapse: collapse; }
+  .printPage.summary th { width: 40%; padding: 1.5pt 6pt 1.5pt 0; text-align: left; font-weight: 600; color: #333; vertical-align: top; }
+  .printPage.summary td { padding: 1.5pt 0; vertical-align: top; }
+  .printPage.summary tr { border-bottom: 1px solid #e2e2e2; }
+  .printPage.summary ul { margin: 0; padding: 0; list-style: none; }
+  .printPage.summary li { padding: 1.5pt 0; border-bottom: 1px solid #e2e2e2; break-inside: avoid; }
+  .printPage.summary li.more { color: #666; font-style: italic; }
+  .printPage.summary p { margin: 0; white-space: pre-wrap; }
+  .printPage.summary .dot { display: inline-block; width: 7pt; height: 7pt; margin-right: 4pt; border-radius: 50%; }
+  .sumTop { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16pt; align-items: start; }
+  .sumPicture svg { display: block; width: 100%; height: auto; max-height: 3.2in; }
+  .sumCols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16pt; align-items: start; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
