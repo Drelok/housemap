@@ -562,7 +562,7 @@ function renderTabs() {
   $('#tabs').innerHTML = plan.floors.filter((f) => !f.basement).map(tab).join('')
     + '<button id="btnAddFloor" title="Adds the next floor up">+ Floor</button>'
     + plan.floors.filter((f) => f.basement).map(tab).join('')
-    + `<button id="tabHouse" class="${onHouse ? 'active' : ''}" title="What is known about the house as a whole: its facts, your goals and a walkthrough checklist">House</button>`
+    + `<button id="tabHouse" class="${onHouse ? 'active' : ''}" title="What is known about the house as a whole: its facts, your goals, a walkthrough checklist and the maintenance schedule">House${dueCount() ? ` (${dueCount()} due)` : ''}</button>`
     + `<button id="tabIssues" class="${onIssues ? 'active' : ''}" title="Every issue in the house as one list">Issues${todo ? ' (' + todo + ' to do)' : ''}</button>`;
 }
 

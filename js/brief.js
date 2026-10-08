@@ -397,7 +397,7 @@ ${o.aerialName ? `- **Aerial picture:** \`${o.aerialName}\` is a satellite or ae
 
 ${houseWords()}
 
-${houseBrief(o.money, o.household)}
+${houseBrief(o.money, o.household)}${maintenanceBrief() ? '\n\n' + maintenanceBrief() : ''}
 
 ## Totals
 

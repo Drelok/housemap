@@ -155,6 +155,7 @@ The *House* tab, beside *Issues* at the end of the row of sheets, holds what is 
 - **Goals and limits:** whether you are staying or selling, any dates things have to be done by, what you can do yourself, and work that has to happen in a set order. A *Money* box holds the budget and other money matters, kept apart from the rest.
 - **Household:** who lives in the house: how many adults and children and roughly how old, anyone who finds stairs, steps or a bathtub hard, health the house can affect (asthma, allergies, anyone more at risk from mould, radon, lead or carbon monoxide), pets, and changes coming. It decides what matters most, such as a walk-in shower or how urgent damp is. Being private, it is kept apart like the money box and left out of the export for AI unless you tick the box for it.
 - **Walkthrough checklist:** sixteen lines covering what every house has, from the roof and gutters to radon and hazardous materials, each marked *Fine*, *Issue* or *Don't know*, with a note. Marking a line *Issue* offers to add an issue for it, about the whole house and without a pin; the line then shows that issue with a *Go to issue* button. An issue already made, such as a roof issue pinned on the plan, can be linked to its line instead, with *or link one already made…* beside *Add an issue*; *Unlink* takes the link off and leaves the issue as it is. The export for AI gives each line's issue by number, so a line with an issue linked no longer reads as not looked at.
+- **Maintenance:** at the end of the House sheet, the jobs done again every so often to keep the house in order, each with how often (every month up to every 10 years), when it was last done and when it is next due. *Done today* marks one done; a date can also be typed. A job due within two weeks is marked in amber, and an overdue one, or one not done yet, in red, and the House tab says how many are overdue, as in *House (2 due)*. *Add common jobs…* offers 21 that most houses have, such as the furnace filter, the gutters, testing the alarms and the sump pump, flushing the water heater and cleaning the dryer vent, none added unless ticked; *Add a job of my own* adds any other. Each has a note for the filter size, who does it or what it cost. The export for AI lists them with when each was last done.
 
 ## Asking an AI about the house
 
@@ -261,6 +262,7 @@ Version 1 and 2 files, which used decimal feet, are converted when opened and sa
 - **photos:** a marker, and each of its `more`, may hold `taken`, when the photo was taken, as `YYYY-MM-DD HH:MM`. `photoTaken` on the plan holds the same for photos still waiting in `photos/unprocessed`, by file name.
 - **issues** may also hold `when` (`now`, `month`, `season` or `wait`), `trade` (words), `related` (the `id`s of issues it may be connected to, kept on both) and `aiNotes` (notes brought in from AI reviews).
 - **reviews:** optional; summaries kept from AI reviews, each `{ "date", "summary", "order" }`.
+- **maintenance:** optional; the maintenance schedule, each job `{ "id", "task", "every", "last", "note" }`: `every` is months between, `last` the day last done as `YYYY-MM-DD`, or `""`.
 - **household:** optional. `people`, `mobility`, `health`, `pets` and `changes` are words, left out of the export for AI unless asked for.
 - **checklist:** optional; the walkthrough. Each key is one line (`roof`, `gutters`, `grading`, `foundation`, `siding`, `windows`, `attic`, `plumbing`, `waterHeater`, `electrical`, `hvac`, `alarms`, `pests`, `radon`, `hazards`, `outside`) with a `state` of `fine`, `issue` or `unknown`, an optional `note`, and an optional `issueId`, the `id` of the issue added for it.
 - **units:** always `"inches"`. It is there for people reading the file; the app goes by `version`.
@@ -304,6 +306,7 @@ js/search.js      the Find box
 js/print.js       printed floor plans and the issue report
 js/brief.js       the export for AI: the house in words, small photos, pictures of the sheets
 js/house.js       house facts, goals and the walkthrough checklist
+js/maintenance.js the maintenance schedule
 js/review.js      bringing an AI assistant's review back in
 js/landing.js     start page and new project wizard
 js/main.js        toolbar, keyboard and start-up
