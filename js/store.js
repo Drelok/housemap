@@ -8,6 +8,12 @@ const BACKUP_EXT = '.bak'; // the second copy of the plan kept beside it: plan.h
 const DIR_UNPROCESSED = 'photos/unprocessed';
 const DIR_PROCESSED = 'photos/processed';
 const IMAGE_EXT = /\.(jpe?g|png|webp|gif|avif|bmp|heic|heif)$/i;
+// The preview of a change waiting to be merged is published under /preview/ on the same site, so
+// it would share the browser's storage with the app itself. It keeps its own instead: its projects,
+// its list of recent projects and its settings never mix with the real ones.
+const PREVIEW = /\/preview\//.test(location.pathname);
+const STORE_NAME = PREVIEW ? 'housemap-preview' : 'housemap'; // the browser's database for the list of projects
+const PROJECTS_DIR = PREVIEW ? 'preview-projects' : 'projects'; // the folder in the browser's storage for projects kept there
 
 const store = {
   root: null,
@@ -20,7 +26,7 @@ const store = {
   },
 
   async browserFolder(name) {
-    const projects = await (await navigator.storage.getDirectory()).getDirectoryHandle('projects', { create: true });
+    const projects = await (await navigator.storage.getDirectory()).getDirectoryHandle(PROJECTS_DIR, { create: true });
     return projects.getDirectoryHandle(slug(name, 'house') + '-' + uid(), { create: true });
   },
 
@@ -109,7 +115,7 @@ async function allowed(handle) {
 
 function idb(mode, fn) {
   return new Promise((resolve, reject) => {
-    const open = indexedDB.open('housemap', 1);
+    const open = indexedDB.open(STORE_NAME, 1);
     open.onupgradeneeded = () => open.result.createObjectStore('kv');
     open.onerror = () => reject(open.error);
     open.onsuccess = () => {
@@ -141,7 +147,7 @@ const projects = {
   async inBrowser() {
     const found = [];
     try {
-      const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('projects');
+      const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle(PROJECTS_DIR);
       for await (const handle of dir.values()) {
         if (handle.kind !== 'directory') continue;
         const plan = await handle.getFileHandle(PLAN_FILE).then((h) => h.getFile()).then((f) => f.text()).then(JSON.parse).catch(() => null);

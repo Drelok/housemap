@@ -3,6 +3,12 @@
 A plain static web app with no build step. `js/load.js` loads the scripts in order, and the list in
 `sw.js` must be kept in step with it. The CSP forbids inline script and `fetch`.
 
+## Preview
+
+`.github/workflows/pages.yml` publishes `main` on GitHub Pages and the branch being tested at `/preview/`. A push to a
+branch updates the preview. Under `/preview/` the app keeps its storage apart (`PREVIEW` in `js/store.js`): use
+`STORE_NAME`, `PROJECTS_DIR` and `SETTINGS_KEY` for anything stored in the browser, never a fixed name.
+
 ## UI conventions
 
 - Lengths are shown and typed in feet and inches.
