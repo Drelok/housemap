@@ -12,7 +12,18 @@ const ISSUE_GROUPS = {
 };
 
 const issueFloor = (i) => plan.floors.find((f) => f.id === i.floorId);
-const issueRoom = (i) => (pinned(i) ? [...(issueFloor(i)?.rooms || [])].reverse().find((r) => shapeContains(r, i)) : undefined);
+// Rooms are drawn as the clear space inside their walls, so a wall is the gap between two rooms, or
+// the strip along the outside of one. A pin that is in no room but within this far of one is taken
+// to be in its wall.
+const WALL_REACH = 1; // feet
+const distToShape = (r, p) => Math.min(...outlinePoints(r).map((a, n, pts) => distToSegment(p, a, pts[(n + 1) % pts.length])));
+// The rooms whose wall a spot is in, nearest first; none for a spot inside a room or out in the open.
+function wallRooms(f, p) {
+  if (!f || f.rooms.some((r) => shapeContains(r, p))) return [];
+  return f.rooms.map((r) => ({ r, d: distToShape(r, p) })).filter((x) => x.d <= WALL_REACH).sort((a, b) => a.d - b.d).map((x) => x.r);
+}
+// The room an issue's pin is in, or the nearest room whose wall it is in.
+const issueRoom = (i) => (pinned(i) ? [...(issueFloor(i)?.rooms || [])].reverse().find((r) => shapeContains(r, i)) || wallRooms(issueFloor(i), i)[0] : undefined);
 // A cost as a range, or as one figure where there is no range to give, as with an accepted quote.
 const costRange = (list) => (costLow(list) === costHigh(list) ? money(costLow(list)) : `${money(costLow(list))} to ${money(costHigh(list))}`);
 // The same for a list in which some issues may have no figure yet: "$400 to $900 · 2 not priced".

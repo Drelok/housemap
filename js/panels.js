@@ -56,6 +56,17 @@ function issueMoreHtml(i) {
     </details>`;
 }
 
+// Said under Applies to for a pinned issue. A pin on a floor that is in no room and in no wall is
+// often meant for the whole floor, so that is pointed out; whether it is, is for the owner to say.
+// On the exterior sheet a pin out in the open is normal: the yard, the driveway, a fence.
+function pinNote(i) {
+  const f = issueFloor(i);
+  if (f.kind === 'floor' && f.rooms.length && !issueRoom(i)) {
+    return `<p class="note small" id="pinOutside">This pin is not in any room. If it stands for the whole floor, choose <i>The whole of ${esc(f.name)}</i> above; if it marks a real spot, leave it as it is.</p>`;
+  }
+  return '<p class="muted small">For something with no one spot, such as the roof, the wiring, the pipes or lead paint, choose the whole floor or the whole house here, so that it is not described by where its pin happens to be.</p>';
+}
+
 // What an issue is about: the spot its pin marks, a whole floor, or the whole house.
 function issueScopeHtml(i) {
   const options = [
@@ -65,7 +76,7 @@ function issueScopeHtml(i) {
   ];
   const now = pinned(i) ? 'pin' : issueFloor(i) ? i.floorId : 'house';
   return `<label>Applies to<select id="issueScope">${options.map(([v, l]) => `<option value="${esc(v)}"${v === now ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
-    ${pinned(i) ? '<p class="muted small">For something with no one spot, such as the roof, the wiring, the pipes or lead paint, choose the whole floor or the whole house here, so that it is not described by where its pin happens to be.</p>' : `<p class="muted small">This issue has no pin. To give it one, choose <i>One spot</i> above${issueFloor(i) ? '' : ' while the sheet it is on is open'}, then click the place on the plan.</p>`}`;
+    ${pinned(i) ? pinNote(i) : `<p class="muted small">This issue has no pin. To give it one, choose <i>One spot</i> above${issueFloor(i) ? '' : ' while the sheet it is on is open'}, then click the place on the plan.</p>`}`;
 }
 
 // Said under a room's name when another room on the floor has the same one.

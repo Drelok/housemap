@@ -60,6 +60,20 @@ function nearestWall(r, p) {
   return best.d < 0.25 ? `on ${wall}` : `${about(best.d)} from ${wall}`;
 }
 
+// A spot in a wall, said by the room or rooms the wall belongs to: "in the wall between Kitchen and
+// Living room", or "in the north wall of Kitchen" for a wall with one room beside it. Empty for a
+// spot that is not in a wall.
+function wallWords(f, p) {
+  const [a, b] = wallRooms(f, p);
+  if (!a) return '';
+  if (b) return `in the wall between ${roomTitle(a)} and ${roomTitle(b)}`;
+  // Which wall: the way from the wall out to the spot, which is outside the room.
+  const pts = outlinePoints(a);
+  const q = pts.map((v, n) => nearestOnSegment(p, v, pts[(n + 1) % pts.length])).sort((m, n) => Math.hypot(m.x - p.x, m.y - p.y) - Math.hypot(n.x - p.x, n.y - p.y))[0];
+  const way = wayWord(bearingOf(p.x - q.x, p.y - q.y));
+  return northSet() ? `in the ${way} wall of ${roomTitle(a)}` : `in the wall of ${roomTitle(a)} toward the ${way} of the plan`;
+}
+
 // Which part of its floor a room is in, going by where its middle sits among all the rooms.
 function roomPart(f, r) {
   const rooms = f.rooms.filter((x) => !x.separate);
@@ -98,6 +112,8 @@ function spotWords(f, p) {
   if (r) {
     const part = f.kind === 'floor' ? roomPart(f, r) : '';
     parts.push(`${roomTitle(r)}${part ? ` (${part})` : ''}`, nearestWall(r, p));
+  } else if (wallRooms(f, p).length) {
+    parts.push(wallWords(f, p));
   } else if (f.rooms.length) {
     // Not in anything drawn: said by the nearest thing that is.
     const near = f.rooms.map((x) => ({ x, d: Math.min(...outlinePoints(x).map((a, n, pts) => distToSegment(p, a, pts[(n + 1) % pts.length]))) })).sort((a, b) => a.d - b.d)[0];
@@ -120,7 +136,8 @@ function stackWords(i) {
   const at = levels.indexOf(f);
   const line = (g) => {
     const r = roomAt(g, i);
-    return r ? [roomTitle(r), ...itemsNear(g, i)].join('; ') : 'no room is drawn at this spot';
+    const where = r ? roomTitle(r) : wallWords(g, i);
+    return where ? [where, ...itemsNear(g, i)].join('; ') : 'no room is drawn at this spot';
   };
   // On the exterior sheet an issue has no floor of its own; if it is over the house, every floor is listed.
   if (at < 0) return levels.filter((g) => roomAt(g, i)).map((g) => [`At this spot inside the house, on ${g.name}`, line(g)]);
