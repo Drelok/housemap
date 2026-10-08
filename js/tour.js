@@ -258,11 +258,11 @@ const TOUR = [
   },
   {
     title: 'Asking an AI about your house',
-    text: '<b>Export for AI (.zip)</b> packs the house for an AI assistant you already use, such as Claude or ChatGPT: a brief in plain words, a picture of each floor with the issue pins, the issue photos and the issue list. It is a second opinion worth having before you call anyone: what matters most, what it is likely to cost, what has to be done first, and what you may have missed. The app sends nothing anywhere; you upload the files yourself, and your budget and household are left out unless you tick them.<br><br>Unzip it, upload the files, and paste the request at the top of <i>README-FIRST.md</i>. Then ask things like:<ul><li>Do an issue and cost analysis: rank the issues by safety and urgency, with a likely cost range for each where I live.</li><li>Which should be done first, and which have to wait for others?</li><li>What could be causing the damp patch, and what can I check myself before calling someone?</li><li>How do the three roof quotes compare, and what should I ask the roofers?</li><li>What have I missed? Which facts or checklist lines should I look into?</li></ul>Ask it to send back <i>house-map-review.md</i>, as the brief explains. <b>Import AI review</b> then lists each suggestion with a tick box, and nothing changes until you apply what you ticked. Treat its figures as estimates, and have a professional look at anything about safety or the structure.',
-    tryIt: 'Open Export for AI to see what can go in.',
-    at: '#btnAi',
+    text: '<b>Export for AI</b>, in the File menu, packs the house for an AI assistant you already use, such as Claude or ChatGPT, for a second opinion on what matters most, what it is likely to cost and what to do first. <b>Import AI review</b> brings its advice back in, a tick box at a time.<br><br>The <b>?</b> menu has a full guide: why it is worth doing, how to give it the files, things to ask it, and what to watch out for.',
+    tryIt: 'Open <i>Asking an AI about your house</i> from the ? menu.',
+    at: '#btnAiGuide',
     go() {
-      tourMenu('#btnAi');
+      tourMenu('#btnAiGuide');
     },
   },
   {

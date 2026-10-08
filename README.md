@@ -185,6 +185,8 @@ The *House* tab, beside *Issues* at the end of the row of sheets, holds what is 
 
 *File* → *Export for AI (.zip)…* makes one zip to hand to an AI assistant such as Claude or ChatGPT, so it can look over the house and its issues with you. Nothing is sent anywhere by the app: the zip is saved to your computer and you choose what to do with it. Unzip it and upload the files, or the whole folder, to the assistant.
 
+*?* → *Asking an AI about your house* is a guide to all this inside the app, in every project. It covers why it is worth doing, the steps from filling in the plan to bringing the review back, things to ask about costs, order, causes, quotes, gaps and planning, and a caution to treat the answers as a starting point. It ends with a button that opens *Export for AI*.
+
 ```
 README-FIRST.md               the brief: the house and every issue in plain words
 issues.csv                    the same issues as a table
