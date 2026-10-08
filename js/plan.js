@@ -88,6 +88,20 @@ function exportAgeWords(stamp) {
 const backupDue = (stamp) => !stamp || daysSince(stamp) > BACKUP_DAYS;
 // What a room's floor is covered with, kept in `cover`. The first of a room's details a contractor
 // or an AI asks for when pricing work in it.
+// What a room's walls and ceiling are finished with, and in what paint: kept on the room as
+// `walls`, `paint`, `sheen`, `trim`, `ceilingFinish` and, where it differs from the house
+// standard, `ceiling` (its height, in feet). What a touch-up or a painter's quote needs.
+const WALL_FINISHES = [['', 'Not said'], ['drywall', 'Painted drywall'], ['plaster', 'Plaster'], ['wallpaper', 'Wallpaper'], ['panel', 'Wood panelling'], ['tile', 'Tile'], ['masonry', 'Brick, block or stone'], ['bare', 'Bare framing or concrete']];
+const SHEENS = [['', 'Not said'], ['flat', 'Flat or matte'], ['eggshell', 'Eggshell'], ['satin', 'Satin'], ['semi', 'Semi-gloss'], ['gloss', 'Gloss']];
+const CEILING_FINISHES = [['', 'Not said'], ['smooth', 'Smooth drywall'], ['texture', 'Textured: popcorn or knockdown'], ['plaster', 'Plaster'], ['wood', 'Wood or beams'], ['drop', 'Drop or tile ceiling'], ['open', 'Open joists']];
+const choiceWords = (list, v) => list.find(([k]) => k === v)?.[1] || v;
+const roomCeiling = (r) => r.ceiling || std('ceiling');
+// The area of a room's walls, for paint: around it times its ceiling height, with no allowance
+// taken off for doors and windows.
+const wallArea = (r) => {
+  const pts = outlinePoints(r);
+  return pts.reduce((a, p, n) => a + Math.hypot(pts[(n + 1) % pts.length].x - p.x, pts[(n + 1) % pts.length].y - p.y), 0) * roomCeiling(r);
+};
 const FLOOR_COVERS = [['', 'Not said'], ['carpet', 'Carpet'], ['hardwood', 'Hardwood'], ['engineered', 'Engineered wood'], ['laminate', 'Laminate'], ['vinyl', 'Vinyl, plank or sheet'], ['tile', 'Ceramic or stone tile'], ['concrete', 'Bare concrete'], ['other', 'Something else']]; // offered on the floors, not on the exterior sheet
 const MAX_RISER = 7.75 / 12; // the tallest single step the current residential code (IRC) allows
 
@@ -138,7 +152,7 @@ function scalePlan(p, k, tidy = (v) => v) {
   };
   for (const f of p.floors) {
     for (const r of f.rooms || []) {
-      at(r, ['x', 'y', 'w', 'h', 'level']);
+      at(r, ['x', 'y', 'w', 'h', 'level', 'ceiling']);
       for (const pt of r.points || []) at(pt, ['x', 'y']);
     }
     for (const o of f.openings || []) at(o, ['x', 'y', 'w', 't', 'sill']);

@@ -86,6 +86,23 @@ header, #tabs, #guide, #aerial { user-select: none; }
 #view3dBody { max-height: 65vh; overflow: auto; }
 #view3dBody h3 { margin: 12px 0 4px; font-size: 13px; color: #24476b; }
 #view3dBody svg { display: block; width: 100%; height: auto; }
+#houseBody .maintenance { margin-top: 18px; max-width: 900px; }
+#houseBody .maintenance h2 .muted { margin-left: auto; font-weight: 400; }
+.maintRow { display: grid; grid-template-columns: minmax(200px, 1.6fr) 150px 150px minmax(130px, 1fr) auto; gap: 4px 10px; align-items: end; padding: 8px 0; border-bottom: 1px solid #e4e4e4; }
+.maintRow input, .maintRow select { width: 100%; font: inherit; color: #222; padding: 5px 6px; border: 1px solid #bbb; border-radius: 4px; }
+.maintRow label.lastDone { margin: 0; }
+.maintRow .due { padding-bottom: 6px; font-size: 13px; color: #555; }
+.maintRow.overdue .due { color: #b3261e; font-weight: 600; }
+.maintRow.soon .due { color: #8a6100; font-weight: 600; }
+.maintRow .maintButtons { display: flex; gap: 4px; }
+.maintRow .maintNote { grid-column: 1 / -1; font-size: 13px; }
+#maintDialog { max-width: 560px; }
+#maintList { max-height: 55vh; overflow: auto; }
+#maintList label.check { margin: 0 0 6px; align-items: flex-start; font-size: 13px; }
+@media (max-width: 700px), (max-height: 500px) {
+  .maintRow { grid-template-columns: 1fr 1fr; }
+  .maintRow > input:first-child { grid-column: 1 / -1; }
+}
 #reviewDialog { max-width: 720px; width: calc(100vw - 32px); }
 #reviewList { max-height: 55vh; overflow: auto; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 4px 0; }
 #reviewList h3 { margin: 12px 0 4px; font-size: 13px; color: #24476b; }
@@ -123,6 +140,10 @@ header, #tabs, #guide, #aerial { user-select: none; }
 .plan .goto circle { fill: #24476b; stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; }
 .plan .goto:hover circle { fill: #c2185b; }
 .plan .goto polygon { fill: #fff; }
+.kindGroup { margin: 10px 0 4px; font-size: 12px; color: #24476b; }
+.plan .item .sym .dashed { stroke-dasharray: 4 3; }
+details.record { margin: 4px 0 10px; border: 1px solid #ddd; border-radius: 5px; padding: 0 8px; }
+details.record summary { cursor: pointer; padding: 6px 0; font-size: 13px; color: #24476b; }
 .kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
 .kinds button { text-align: left; }
 
@@ -504,3 +525,7 @@ button.camera { display: none; }
 @media (max-height: 500px) {
   #viewBar button { min-height: 40px; }
 }
+
+/* ---------- a room's finishes ---------- */
+details.finishes { margin: 4px 0 10px; border: 1px solid #ddd; border-radius: 5px; padding: 0 8px; }
+details.finishes summary { cursor: pointer; padding: 6px 0; font-size: 13px; color: #24476b; }

@@ -359,6 +359,11 @@ function houseWords() {
         f.kind === 'floor' && roomPart(f, r),
         r.level && `floor is ${levelText(r)}`,
         f.kind === 'floor' && r.cover && `floor covering: ${FLOOR_COVERS.find(([v]) => v === r.cover)?.[1].toLowerCase() || r.cover}`,
+        f.kind === 'floor' && r.walls && `walls: ${choiceWords(WALL_FINISHES, r.walls).toLowerCase()}`,
+        f.kind === 'floor' && (r.paint || r.sheen) && `paint: ${[r.paint, r.sheen && choiceWords(SHEENS, r.sheen).toLowerCase()].filter(Boolean).join(', ')}`,
+        f.kind === 'floor' && r.trim && `trim: ${r.trim}`,
+        f.kind === 'floor' && r.ceilingFinish && `ceiling: ${choiceWords(CEILING_FINISHES, r.ceilingFinish).toLowerCase()}`,
+        f.kind === 'floor' && `ceiling ${fmtLen(roomCeiling(r))} high, walls about ${Math.round(wallArea(r))} sq ft`,
         f.basement && (r.finished ? 'finished' : 'unfinished'),
         r.separate && 'separate structure, not part of the house',
         inside.length && `holds ${itemsWords(inside)}`,
@@ -373,7 +378,31 @@ function houseWords() {
       out.push(`- Stairs ${it.dir === 'down' ? 'down' : 'up'}${to ? ` to ${to.name}` : ''}${roomAt(f, stairMiddle(it)) ? `, in ${roomTitle(roomAt(f, stairMiddle(it)))}` : ''}`);
     }
   }
+  const systems = applianceWords();
+  if (systems) out.push('', '### Appliances and systems', '', systems);
   return out.join('\n');
+}
+
+// Every appliance and system drawn, with its make, model and age where they are known, and said
+// to be unknown where not, as that is worth asking about.
+function applianceWords() {
+  const lines = [];
+  for (const f of plan.floors) {
+    for (const it of f.items) {
+      const k = itemKind(it.kind);
+      if (!k?.record) continue;
+      const r = roomAt(f, itemMiddle(it));
+      const make = [it.brand, it.model && `model ${it.model}`, it.serial && `serial ${it.serial}`].filter(Boolean).join(', ');
+      const facts = [
+        make || 'make and model not recorded',
+        it.installed ? `installed ${yearWords(it.installed)}` : 'age not recorded',
+        it.warranty && `warranty: ${it.warranty}`,
+        it.note,
+      ].filter(Boolean).join('; ');
+      lines.push(`- **${k.label}** (${f.name}${r ? `, ${roomTitle(r)}` : ''}): ${facts}`);
+    }
+  }
+  return lines.join('\n');
 }
 
 // The whole brief as Markdown. `o` is what was ticked in the export window, with `issues`, the
@@ -411,7 +440,7 @@ ${o.views3d?.length ? `- **3D views:** ${o.views3d.map((n) => `\`${n}\``).join('
 
 ${houseWords()}
 
-${houseBrief(o.money, o.household)}
+${houseBrief(o.money, o.household)}${maintenanceBrief() ? '\n\n' + maintenanceBrief() : ''}
 
 ${o.styles ? styleRequest() + '\n\n' : ''}## Totals
 

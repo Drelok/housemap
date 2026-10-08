@@ -22,7 +22,7 @@ function searchResults(q) {
     }
     for (const it of f.items) {
       const label = isStairs(it) ? 'Stairs' : itemKind(it.kind)?.label || 'Fixture';
-      if (hit(label, it.note)) out.push({ kind: isStairs(it) ? 'Stairs' : 'Fixture', text: label, more: it.note, floorId: f.id, sel: { type: 'item', id: it.id }, points: itemCorners(it) });
+      if (hit(label, it.note, it.brand, it.model, it.serial)) out.push({ kind: isStairs(it) ? 'Stairs' : 'Fixture', text: label, more: it.note, floorId: f.id, sel: { type: 'item', id: it.id }, points: itemCorners(it) });
     }
   }
   for (const i of plan.issues) {

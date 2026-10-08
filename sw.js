@@ -9,7 +9,7 @@ const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'js/boot.js', 'js/load.js',
-  ...['util', 'store', 'plan', 'photos', 'aerial', 'tips', 'help', 'archive', 'interior', 'fixtures', 'canvas', 'panels', 'issues', 'search', 'print', 'brief', 'view3d', 'house', 'review', 'landing', 'main'].map((n) => `js/${n}.js`),
+  ...['util', 'store', 'plan', 'photos', 'aerial', 'tips', 'help', 'archive', 'interior', 'fixtures', 'canvas', 'panels', 'issues', 'search', 'print', 'brief', 'view3d', 'house', 'maintenance', 'review', 'landing', 'main'].map((n) => `js/${n}.js`),
 ];
 
 // The page asks for its files at a fresh address each time (style.css?v=123); the copy is kept
