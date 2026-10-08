@@ -45,12 +45,93 @@ function outward(shape, a, b) {
 // Lines are drawn a set number of pixels wide, whatever the size of the house.
 const polygon = (pts, fill, stroke = '#5b5f66', width = 1.4) => `<polygon points="${pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${width}" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
 
+const WALL_TINT = [236, 232, 224];
+
+// A box standing on a floor: its sides, the farthest first, and its top. [{ depth, svg }]
+function boxParts(pts, z0, z1, fill, depth) {
+  const sides = pts.map((a, k) => {
+    const b = pts[(k + 1) % pts.length];
+    const [p, q] = outward({ points: pts }, a, b);
+    return { d: nearness({ x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 }), svg: polygon([iso(p, z0), iso(q, z0), iso(q, z1), iso(p, z1)], wallShade(p, q, fill), '#6b7380', 0.8) };
+  }).sort((m, n) => m.d - n.d);
+  const top = polygon(pts.map((p) => iso(p, z1)), `rgb(${fill.join(',')})`, '#6b7380', 0.8);
+  return [{ depth, svg: sides.map((x) => x.svg).join('') + top }];
+}
+
+// The doors, open sides, half walls and windows along one wall of a room, as stretches of it:
+// [{ from, to, kind, o }], `from` and `to` measured from a toward b.
+function wallGaps(f, a, b) {
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  if (len < 0.25) return [];
+  const d = { x: (b.x - a.x) / len, y: (b.y - a.y) / len };
+  const out = [];
+  for (const o of f.openings) {
+    if (Math.abs(o.along === 'x' ? d.y : d.x) > 0.05) continue;
+    const t = (o.x - a.x) * d.x + (o.y - a.y) * d.y;
+    const off = Math.abs((o.x - a.x) * d.y - (o.y - a.y) * d.x);
+    if (off > o.t / 2 + 0.25 || t < -o.w / 2 || t > len + o.w / 2) continue;
+    out.push({ from: Math.max(0, t - o.w / 2), to: Math.min(len, t + o.w / 2), kind: o.kind, o });
+  }
+  return out.sort((m, n) => m.from - n.from);
+}
+
+// One wall of a room, cut away at CUT: whole where nothing is in it, missing at a door or an open
+// side, low at a half wall, and at a window cut to its sill, with the glass standing in the opening.
+function wallParts(f, r, a0, b0, z, lift) {
+  const [a, b] = outward(r, a0, b0);
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  const at = (u) => ({ x: a.x + ((b.x - a.x) * u) / (len || 1), y: a.y + ((b.y - a.y) * u) / (len || 1) });
+  const shade = wallShade(a, b, WALL_TINT);
+  const piece = (u0, u1, h0, h1, fill = shade, stroke = '#5b5f66', extra = '') => (u1 - u0 < 0.01 || h1 <= h0 ? ''
+    : `<polygon points="${[iso(at(u0), z + h0), iso(at(u1), z + h0), iso(at(u1), z + h1), iso(at(u0), z + h1)].map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="0.9" vector-effect="non-scaling-stroke"${extra}/>`);
+  let svg = '';
+  let u = 0;
+  for (const g of wallGaps(f, a, b)) {
+    if (g.from > u) svg += piece(u, g.from, 0, CUT);
+    if (g.kind === 'half') svg += piece(g.from, g.to, 0, Math.min(CUT, 2.5), '#cfd5db');
+    else if (g.kind === 'window') {
+      const sill = g.o.sill ?? windowKind(g.o.style).sill;
+      svg += piece(g.from, g.to, 0, Math.min(sill, CUT));
+      svg += piece(g.from, g.to, sill, sill + (WINDOW_HEIGHT[g.o.style] || 4), '#8fb3cf', '#3d6a8f', ' fill-opacity="0.55"');
+    }
+    u = Math.max(u, g.to);
+  }
+  if (u < len) svg += piece(u, len, 0, CUT);
+  return { depth: lift + 2 + nearness({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), svg };
+}
+
+// Stairs going up rise as a flight of steps to the floor above; stairs going down lie flat.
+function stairsParts(it, z, lift) {
+  const parts = stairParts(it);
+  if (it.dir === 'down') return parts.map((p) => ({ depth: lift + 1, svg: polygon(p.quad.map((q) => iso(q, z + 0.05)), '#d9cbb3', '#7b8592', 0.75) }));
+  const total = parts.reduce((n, p) => n + p.treads, 0) || 1;
+  const rise = storey() / (total + 1);
+  const out = [];
+  let k = 0;
+  for (const p of parts) {
+    const [qa, qb, qc, qd] = p.quad;
+    if (!p.treads) {
+      out.push(...boxParts(p.quad, z, z + rise * (k + 0.5), [217, 203, 179], lift + 2 + nearness(shapeCenter({ points: p.quad }))));
+      continue;
+    }
+    for (let n = 0; n < p.treads; n++) {
+      const s0 = n / p.treads;
+      const s1 = (n + 1) / p.treads;
+      const step = [between(qa, qb, s0), between(qa, qb, s1), between(qd, qc, s1), between(qd, qc, s0)];
+      k++;
+      out.push(...boxParts(step, z, z + rise * k, [217, 203, 179], lift + 2 + nearness(shapeCenter({ points: step }))));
+    }
+  }
+  return out;
+}
+
 // The floors, spread apart, as [{ depth, svg }] parts and the labels to go over them.
 function floorsScene() {
   const levels = plan.floors.filter((f) => f.kind === 'floor' && f.rooms.length);
-  // Far enough apart that no floor hides any part of the one below it.
+  // Far enough apart that no floor hides any part of the one below it, with room for the tallest
+  // things on it to stand clear of the next.
   const sums = levels.flatMap((f) => f.rooms.flatMap(outlinePoints)).map(nearness);
-  const spread = (Math.max(...sums) - Math.min(...sums)) * ISO_Y + CUT + 4;
+  const spread = (Math.max(...sums) - Math.min(...sums)) * ISO_Y + 8;
   const parts = [];
   const labels = [];
   const pins = []; // drawn last of all, over the names of the rooms
@@ -61,16 +142,17 @@ function floorsScene() {
       parts.push({ depth: lift, svg: polygon(outlinePoints(r).map((p) => iso(p, z)), r.separate ? '#ebe8e1' : '#f4efe4', '#8d877b') });
     }
     for (const it of f.items) {
-      const shapes = isStairs(it) ? stairParts(it).map((s) => s.quad) : [itemCorners(it)];
-      for (const q of shapes) parts.push({ depth: lift + 1, svg: polygon(q.map((p) => iso(p, z + 0.05)), isStairs(it) ? '#d9cbb3' : '#d5dbe2', '#7b8592', 0.75) });
+      if (isStairs(it)) {
+        parts.push(...stairsParts(it, z, lift));
+        continue;
+      }
+      const h = itemHeights(it);
+      if (!h) continue; // on the ceiling, or of no chosen type
+      parts.push(...boxParts(itemCorners(it), z + h[0], z + h[1], it.kind === 'upper' || it.kind === 'tall' || it.kind === 'shelves' || it.kind === 'counter' ? [222, 214, 200] : [213, 219, 226], lift + 2 + nearness(shapeCenter(it))));
     }
     for (const r of f.rooms) {
       const pts = outlinePoints(r);
-      pts.forEach((a, k) => {
-        const b = pts[(k + 1) % pts.length];
-        const quad = [iso(a, z), iso(b, z), iso(b, z + CUT), iso(a, z + CUT)];
-        parts.push({ depth: lift + 2 + nearness({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), svg: polygon(quad, wallShade(...outward(r, a, b), [236, 232, 224]), '#5b5f66', 0.9) });
-      });
+      pts.forEach((a, k) => parts.push(wallParts(f, r, a, pts[(k + 1) % pts.length], z, lift)));
       const c = iso(shapeCenter(r), z + CUT + 0.5);
       labels.push(`<text x="${c.x.toFixed(2)}" y="${c.y.toFixed(2)}" font-size="1.8" text-anchor="middle" fill="#222" stroke="#fff" stroke-width="0.45" paint-order="stroke" font-family="system-ui, sans-serif">${esc(roomTitle(r))}</text>`);
     }

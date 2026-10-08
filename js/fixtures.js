@@ -104,10 +104,29 @@ function placeItem(p, kind) {
 }
 
 // A new type starts at its usual size, about the middle of the box it had.
+// How high a fixture stands, in feet above the floor: [bottom, top]. Most stand on the floor; upper
+// cabinets hang with space under them, 18" above a counter. Each can be typed for one fixture, which
+// is kept in its `bottom` and `top`. An attic hatch or an alarm on the ceiling has none.
+const ITEM_HEIGHTS = {
+  toilet: [0, 2.5], sink: [0, 2.8], tub: [0, 1.7], shower: [0, 0.3], usink: [0, 3], drain: [0, 0.05], shutoff: [1, 1.5],
+  ksink: [0, 3], counter: [0, 3], upper: [4.5, 7], tall: [0, 7], stove: [0, 3], oven: [0, 6.5], fridge: [0, 6], dishwasher: [0, 2.9],
+  washer: [0, 3.2], dryer: [0, 3.2], wh: [0, 5], furnace: [0, 4.5], boiler: [0, 4], radiator: [0, 2], baseboard: [0, 0.6],
+  panel: [4, 6], sump: [0, 0.1], softener: [0, 4], fireplace: [0, 4], woodstove: [0, 2.8], shelves: [0, 7], bench: [0, 1.5], desk: [0, 2.5],
+};
+
+function itemHeights(it) {
+  const h = ITEM_HEIGHTS[it.kind];
+  if (!h) return null;
+  const lo = it.bottom ?? h[0];
+  return [lo, Math.max(lo + 1 / 48, it.top ?? h[1])];
+}
+
 function setItemKind(it, id) {
   const k = itemKind(id);
   const c = shapeCenter(it);
   Object.assign(it, { kind: id, w: fine(k.w / 12), h: fine(k.d / 12) });
+  delete it.bottom; // a new type starts at its usual heights
+  delete it.top;
   Object.assign(it, { x: fine(c.x - it.w / 2), y: fine(c.y - it.h / 2) });
 }
 
@@ -546,6 +565,15 @@ function stairPointDrag(it, i) {
 
 // ---------- side panel ----------
 
+// The height of a fixture's top, and of its underside where it hangs off the floor, as the 3D view
+// draws it. Each starts at the usual height for its type.
+function heightsHtml(it) {
+  const h = itemHeights(it);
+  if (!h) return '';
+  return `<div class="row">${lengthField('Bottom, above the floor', 'item', 'bottom', h[0])}${lengthField('Top, above the floor', 'item', 'top', h[1])}</div>
+      ${it.kind === 'upper' ? '<p class="muted small">Upper cabinets usually hang 18" above the counter, with the bottom at 4\' 6" and the top at 7\'. Set the top to the ceiling height where they run up to it.</p>' : ''}`;
+}
+
 function itemInspector(it) {
   const del = (it.kind ? DUP_BUTTON : '') + '<button class="danger" id="btnDelete">Delete</button>';
   const held = itemLockedBy(it);
@@ -565,6 +593,7 @@ function itemInspector(it) {
       <label>Type<select data-obj="item" data-field="kind">${ITEM_GROUPS.map(([g, kinds]) => `<optgroup label="${g}">${kinds.map((k) => `<option value="${k.id}"${k.id === it.kind ? ' selected' : ''}>${k.label}</option>`).join('')}</optgroup>`).join('')}</select></label>
       ${lengthField('Width', 'item', 'w', it.w)}
       ${lengthField('Depth, back to front', 'item', 'h', it.h)}
+      ${heightsHtml(it)}
       ${quarter}
       ${field('Turned (°, clockwise; 0 = back to the top)', 'item', 'rot', Math.round((it.rot || 0) * 10) / 10, { num: true, step: 5 })}
       ${note}
