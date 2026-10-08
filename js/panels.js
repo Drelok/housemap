@@ -22,15 +22,37 @@ function issuePhotosHtml(i) {
       <span>${esc(photoCaption(ph))}</span>
       <button data-unlink-photo="${ph.id}" title="Unlink from this issue (the photo marker stays)">Unlink</button>
     </div>`).join('');
+  // On an issue marked Done, the photos are split into those from before the work and after it,
+  // one tile for each photo, each with a switch for when the day it was taken puts it on the wrong side.
+  const done = i.status === 'Done';
+  const phased = done ? phasedShots(i) : [];
+  const shotTile = ({ ph, shot, phase }) => `<div class="thumb">
+      <img data-thumb data-photo="${esc(shot.file)}" data-open-file="${esc(shot.file)}" data-open-from="${ph.id}" alt="" title="Open full size">
+      <span>${esc(shot.taken ? dateWords(shot.taken) : baseOf(shot.file))}</span>
+      <button data-phase-shot="${shot.id}" data-phase="${phase === 'after' ? 'before' : 'after'}" title="${phase === 'after' ? 'This photo is from before the work' : 'This photo is from after the work'}">${phase === 'after' ? 'Move to before' : 'Move to after'}</button>
+      <button data-unlink-photo="${ph.id}" title="Unlink its marker from this issue (the marker stays)${shotsOf(ph).length > 1 ? `, with the ${shotsOf(ph).length} photos it holds` : ''}">Unlink</button>
+    </div>`;
+  const group = (phase, title, empty) => {
+    const list = phased.filter((x) => x.phase === phase);
+    return `<h4 class="phaseHead">${title}</h4>${list.length ? `<div class="thumbs">${list.map(shotTile).join('')}</div>` : `<p class="muted small">${empty}</p>`}`;
+  };
+  const noFile = linked.filter((ph) => !ph.file);
+  const after = phased.some((x) => x.phase === 'after');
+  const phases = done && phased.length ? `${group('before', 'Before the work', 'None.')}${group('after', 'After the work', 'None yet.')}
+    ${noFile.length ? `<div class="thumbs">${noFile.map((ph) => `<div class="thumb"><div class="noPreview" data-goto-photo="${ph.id}" title="Go to this marker to choose its photo">No photo yet</div><span>${esc(photoCaption(ph))}</span><button data-unlink-photo="${ph.id}" title="Unlink from this issue (the photo marker stays)">Unlink</button></div>`).join('')}</div>` : ''}
+    <p class="muted small">Sorted by the day each was taken: on or after the day this was marked done counts as after, and one with no date as before.</p>` : '';
   const floorName = (ph) => plan.floors.find((f) => f.id === ph.floorId)?.name;
   const others = plan.photos.filter((ph) => !i.photoIds.includes(ph.id))
     .sort((a, b) => (b.floorId === i.floorId) - (a.floorId === i.floorId));
   const options = others.map((ph) => `<option value="${ph.id}">${esc(floorName(ph) + ' · ' + photoCaption(ph))}</option>`).join('');
+  // Once it is done, a photo of the finished work is worth having, and is asked for until there is one.
+  const nudge = done && !after ? `<p class="note">No photo from after the work yet. One taken now shows what was done${pinned(i) ? ': <i>Add an after photo</i> puts a marker beside the pin, ready for the photo' : ''}.</p>` : '';
   return `<label>Photos</label>
-    ${linked.length ? `<div class="thumbs">${tiles}</div>` : ''}
+    ${phases || (linked.length ? `<div class="thumbs">${tiles}</div>` : '')}
+    ${nudge}
     <div class="actions">
       ${others.length ? `<select id="linkPhoto"><option value="">Link a photo marker…</option>${options}</select>` : ''}
-      ${pinned(i) ? '<button id="btnPhotoHere" title="Places a photo marker at this issue, links it, and lets you choose its photo">New photo here</button>' : ''}
+      ${pinned(i) ? `<button id="btnPhotoHere" title="Places a photo marker at this issue, links it, and lets you choose its photo">${done ? 'Add an after photo' : 'New photo here'}</button>` : ''}
     </div>
     ${i.photo ? field('Photo note', 'issue', 'photo', i.photo) : ''}`;
 }
@@ -434,7 +456,23 @@ $('#inspector').addEventListener('click', async (e) => {
   }
   if (e.target.id === 'btnOpenSel') openLightbox(selShot().file, photoCaption(selPhoto(), selShot()));
   if (e.target.id === 'btnDetach') detachPhoto(selPhoto(), selShot());
-  const { openPhoto, gotoPhoto, unlinkPhoto } = e.target.dataset;
+  const { openPhoto, gotoPhoto, unlinkPhoto, openFile, openFrom, phaseShot, phase } = e.target.dataset;
+  if (openFile) {
+    const ph = plan.photos.find((p) => p.id === openFrom);
+    openLightbox(openFile, photoCaption(ph, shotsOf(ph).find((s) => s.file === openFile)));
+  }
+  if (phaseShot) {
+    const i = selIssue();
+    const shot = i.photoIds.map((id) => plan.photos.find((p) => p.id === id)).filter(Boolean).flatMap(shotsOf).find((s) => s.id === phaseShot);
+    // A choice the same as the day it was taken would give is not kept, so it follows the dates again.
+    const by = { ...i.shotPhase };
+    delete by[phaseShot];
+    i.shotPhase = by;
+    if (shotPhase(i, shot) !== phase) i.shotPhase[phaseShot] = phase;
+    if (!Object.keys(i.shotPhase).length) delete i.shotPhase;
+    save();
+    renderInspector();
+  }
   if (openPhoto) {
     const ph = plan.photos.find((p) => p.id === openPhoto);
     openLightbox(ph.file, photoCaption(ph));

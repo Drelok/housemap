@@ -204,6 +204,8 @@ aside { width: 360px; background: #fff; border-left: 1px solid #ddd; display: fl
 .thumbs div.thumb { border: 1px solid #bbb; border-radius: 5px; }
 .thumbs div.thumb img { cursor: zoom-in; }
 .thumbs div.thumb .noPreview { cursor: pointer; }
+.phaseHead { margin: 8px 0 4px; font-size: 12px; color: #24476b; }
+.thumb button[data-phase-shot] { font-size: 11px; padding: 2px 4px; }
 .thumbs div.thumb button { font-size: 11px; padding: 1px 4px; }
 #linkPhoto { flex: 1; min-width: 0; font: inherit; padding: 4px; border: 1px solid #bbb; border-radius: 4px; }
 .thumbs { max-height: 230px; overflow: auto; margin-bottom: 10px; padding: 2px; }

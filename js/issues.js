@@ -188,6 +188,24 @@ let quoteOpen = ''; // the quote whose form is open in the side panel
 let quoteFor = ''; // the quote a file is being chosen for
 
 const quotesOf = (i) => i.quotes || [];
+
+// ---------- before and after ----------
+
+// On an issue marked Done, each of its photos is from before the work or after it: taken on or
+// after the day it was marked done counts as after, and taken earlier, or on no known day, as
+// before. Where that is wrong, the owner sets it, and it is kept in `i.shotPhase` by photo id.
+function shotPhase(i, shot) {
+  const set = i.shotPhase?.[shot.id];
+  if (set) return set;
+  return i.doneOn && shot.taken && shot.taken.slice(0, 10) >= i.doneOn ? 'after' : 'before';
+}
+
+// The photos of an issue, the befores first, as [{ ph, shot, phase }]. Phase is '' unless it is Done.
+function phasedShots(i) {
+  const shots = i.photoIds.map((id) => plan.photos.find((p) => p.id === id)).filter(Boolean)
+    .flatMap((ph) => shotsOf(ph).filter((s) => s.file).map((shot) => ({ ph, shot, phase: i.status === 'Done' ? shotPhase(i, shot) : '' })));
+  return shots.sort((a, b) => (a.phase === 'after') - (b.phase === 'after'));
+}
 const quoteName = (q) => q.company || q.contact || 'Unnamed company';
 const quoteLine = (q) => `${quoteName(q)}: ${money(q.amount)}${q.status && q.status !== 'Received' ? ` (${q.status.toLowerCase()})` : ''}`;
 
