@@ -17,13 +17,35 @@ const FLOOR_DEPTH = 1; // feet between one floor's ceiling and the floor above i
 const DOOR_HEIGHT = 80 / 12;
 const WINDOW_HEIGHT = { standard: 4, high: 1.5, egress: 3.5, block: 1.5 };
 
-const iso = (p, z) => ({ x: (p.x - p.y) * ISO_X, y: (p.x + p.y) * ISO_Y - z });
+// Which way round the house is seen: 0 to 3 quarter turns. Set only while a picture is drawn.
+let turn = 0;
+// A point of the plan with the house turned `turn` quarter turns clockwise, as it is seen.
+function turned(p) {
+  if (turn === 1) return { x: -p.y, y: p.x };
+  if (turn === 2) return { x: -p.x, y: -p.y };
+  if (turn === 3) return { x: p.y, y: -p.x };
+  return p;
+}
+const iso = (p, z) => {
+  const q = turned(p);
+  return { x: (q.x - q.y) * ISO_X, y: (q.x + q.y) * ISO_Y - z };
+};
 // How far toward the viewer a point is: larger is nearer, and is drawn later, over what is behind.
-const nearness = (p) => p.x + p.y;
+const nearness = (p) => {
+  const q = turned(p);
+  return q.x + q.y;
+};
+// How far across the picture a point is, left to right.
+const sideways = (p) => {
+  const q = turned(p);
+  return q.x - q.y;
+};
 const storey = () => std('ceiling') + FLOOR_DEPTH;
 
 // A face's shade from the way it faces: the two sides turned toward the viewer are lit, the others in shade.
-function wallShade(a, b, base) {
+function wallShade(a0, b0, base) {
+  const a = turned(a0);
+  const b = turned(b0);
   const nx = b.y - a.y;
   const ny = -(b.x - a.x);
   const toward = (nx + ny) / (Math.hypot(nx, ny) || 1);
@@ -63,7 +85,7 @@ function boxSolid(pts, z0, z1, fill) {
 
 // Across the picture, a footprint spans x − y from one side to the other.
 function across(pts) {
-  const u = pts.map((p) => p.x - p.y);
+  const u = pts.map(sideways);
   return [Math.min(...u), Math.max(...u)];
 }
 
@@ -73,8 +95,8 @@ function chord(pts, u) {
   const out = [];
   pts.forEach((a, k) => {
     const b = pts[(k + 1) % pts.length];
-    const ua = a.x - a.y;
-    const ub = b.x - b.y;
+    const ua = sideways(a);
+    const ub = sideways(b);
     if ((ua - u) * (ub - u) > 0) return;
     const t = ua === ub ? 0 : (u - ua) / (ub - ua);
     out.push(nearness(a) + (nearness(b) - nearness(a)) * t);
@@ -202,8 +224,11 @@ function stairsSolids(it, z) {
   return out;
 }
 
+// What the pictures show, each of which can be hidden in the 3D view window. The export shows all.
+const SHOW_ALL = { labels: true, issues: true, photos: true, fixtures: true };
+
 // The floors, spread apart, as [{ depth, svg }] parts and the labels to go over them.
-function floorsScene() {
+function floorsScene(show = SHOW_ALL) {
   const levels = plan.floors.filter((f) => f.kind === 'floor' && f.rooms.length);
   // Far enough apart that no floor hides any part of the one below it, with room for the tallest
   // things on it to stand clear of the next.
@@ -224,7 +249,7 @@ function floorsScene() {
         : polygon(pts, '#f4efe4', '#8d877b') });
     }
     const solids = [];
-    for (const it of f.items) {
+    for (const it of show.fixtures ? f.items : []) {
       if (isStairs(it)) {
         solids.push(...stairsSolids(it, z));
         continue;
@@ -237,11 +262,20 @@ function floorsScene() {
       const pts = outlinePoints(r);
       if (!r.separate) pts.forEach((a, k) => solids.push(...wallSolids(f, r, a, pts[(k + 1) % pts.length], z)));
       const c = iso(shapeCenter(r), z + (r.separate ? 0.2 : CUT + 0.5));
-      labels.push(`<text x="${c.x.toFixed(2)}" y="${c.y.toFixed(2)}" font-size="1.8" text-anchor="middle" fill="#222" stroke="#fff" stroke-width="0.45" paint-order="stroke" font-family="system-ui, sans-serif">${esc(roomTitle(r))}</text>`);
+      if (show.labels) labels.push(`<text x="${c.x.toFixed(2)}" y="${c.y.toFixed(2)}" font-size="1.8" text-anchor="middle" fill="#222" stroke="#fff" stroke-width="0.45" paint-order="stroke" font-family="system-ui, sans-serif">${esc(roomTitle(r))}</text>`);
     }
     drawOrder(solids).forEach((s, k) => parts.push({ depth: lift + 1 + k, svg: s.svg }));
     // The numbered issue pins on this floor, standing just above it.
-    for (const i of plan.issues) {
+    // The photo markers, as on the plan, each with a short arrow the way its first photo looks.
+    for (const ph of show.photos ? plan.photos : []) {
+      if (ph.floorId !== f.id) continue;
+      const p = iso(ph, z + 0.2);
+      const a = (((ph.dir || 0) - 90) * Math.PI) / 180;
+      const q = iso({ x: ph.x + Math.cos(a) * 1.6, y: ph.y + Math.sin(a) * 1.6 }, z + 0.2);
+      const aim = typeof ph.dir === 'number' ? `<line x1="${p.x.toFixed(2)}" y1="${p.y.toFixed(2)}" x2="${q.x.toFixed(2)}" y2="${q.y.toFixed(2)}" stroke="#00897b" stroke-width="2.5" vector-effect="non-scaling-stroke"/>` : '';
+      pins.push(`${aim}<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="0.75" fill="#00897b" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`);
+    }
+    for (const i of show.issues ? plan.issues : []) {
       if (i.floorId !== f.id || !pinned(i) || i.status === 'Done') continue;
       const p = iso(i, z + 0.2);
       pins.push(`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="1.15" fill="${cat(i.category).color}" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/><text x="${p.x.toFixed(2)}" y="${(p.y + 0.46).toFixed(2)}" font-size="1.3" font-weight="700" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif">${issueNum(i)}</text>`);
@@ -254,7 +288,7 @@ function floorsScene() {
 
 // The outside: the outline raised to the height of the floors above ground, with the windows and
 // outside doors of every floor placed on its walls where they sit on that floor's plan.
-function outsideScene() {
+function outsideScene(show = SHOW_ALL) {
   const shapes = (exteriorFloor()?.rooms || []);
   const floors = plan.floors.filter((f) => f.kind === 'floor');
   const above = floors.filter((f) => !f.basement);
@@ -270,7 +304,7 @@ function outsideScene() {
   // a block for it would only hide the house.
   for (const s of shapes.filter((x) => x.separate)) {
     parts.push({ depth: -2e9, svg: `<polygon points="${outlinePoints(s).map((p) => iso(p, 0)).map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#eeebe4" stroke="#8d877b" stroke-width="1.2" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>` });
-    parts.push({ depth: -2e9 + 1, svg: label(s, 0) });
+    if (show.labels) parts.push({ depth: -2e9 + 1, svg: label(s, 0) });
   }
   // The parts of the house are drawn one whole block at a time, the farthest first, each with its
   // walls from the back and its top last, so that no block's top lies over the walls of one nearer.
@@ -285,7 +319,7 @@ function outsideScene() {
       parts.push({ depth: base + nearness({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), svg: svgs });
     });
     parts.push({ depth: base + 5e5, svg: polygon(pts.map((p) => iso(p, height)), '#b9b2a6') });
-    labels.push(label(s, height + 0.3));
+    if (show.labels) labels.push(label(s, height + 0.3));
   });
   return { parts, labels };
 }
@@ -345,8 +379,17 @@ function sceneSvg({ parts, labels }, width, title) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0} ${y0} ${w} ${h}" width="${width}" height="${height}"><title>${esc(title)}</title><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#fff"/>${body}</svg>`;
 }
 
-const floorsSvg = (width) => sceneSvg(floorsScene(), width, `${plan.name}: the floors in 3D, walls cut away`);
-const outsideSvg = (width) => sceneSvg(outsideScene(), width, `${plan.name}: the outside in 3D, from the plan`);
+// A picture seen from `quarter` quarter turns round from the usual corner, showing what `show` says.
+function turnedSvg(scene, quarter, show, width, title) {
+  turn = ((quarter % 4) + 4) % 4;
+  try {
+    return sceneSvg(scene(show), width, title);
+  } finally {
+    turn = 0;
+  }
+}
+const floorsSvg = (width, quarter = 0, show = SHOW_ALL) => turnedSvg(floorsScene, quarter, show, width, `${plan.name}: the floors in 3D, walls cut away`);
+const outsideSvg = (width, quarter = 0, show = SHOW_ALL) => turnedSvg(outsideScene, quarter, show, width, `${plan.name}: the outside in 3D, from the plan`);
 
 // An SVG picture as a PNG.
 async function svgPng(text) {
@@ -377,12 +420,98 @@ async function view3dPictures() {
 
 // ---------- View -> 3D view ----------
 
+// What the window shows, kept while the project is open: the same for both pictures, and each
+// picture's own turn and zoom.
+const view3d = { show: { ...SHOW_ALL }, outside: { turn: 0, zoom: 1 }, floors: { turn: 0, zoom: 1 } };
+const ZOOMS = [1, 1.5, 2, 3, 4, 6];
+const SHOW_CHOICES = [['labels', 'Labels'], ['issues', 'Issues'], ['photos', 'Photo markers'], ['fixtures', 'Fixtures and stairs']];
+
+function view3dSection(key, title) {
+  const svg = (key === 'outside' ? outsideSvg : floorsSvg)(1200, view3d[key].turn, view3d.show);
+  if (!svg) return '';
+  const { zoom } = view3d[key];
+  return `<section class="v3dSec" data-v3d="${key}">
+      <div class="v3dBar">
+        <h3>${title}</h3>
+        <span class="v3dTools">
+          <button type="button" data-v3d-turn="-1" title="Turns the view a quarter turn to the left" aria-label="Turn left">&#8634;</button>
+          <button type="button" data-v3d-turn="1" title="Turns the view a quarter turn to the right" aria-label="Turn right">&#8635;</button>
+          <button type="button" data-v3d-zoom="-1" title="Zooms out"${zoom === ZOOMS[0] ? ' disabled' : ''} aria-label="Zoom out">&minus;</button>
+          <span class="v3dZoom">${Math.round(zoom * 100)}%</span>
+          <button type="button" data-v3d-zoom="1" title="Zooms in"${zoom === ZOOMS.at(-1) ? ' disabled' : ''} aria-label="Zoom in">+</button>
+        </span>
+      </div>
+      <div class="v3dPane">${svg}</div>
+    </section>`;
+}
+
+// At 100% the whole picture fits in its box, however tall; zooming in enlarges it from there.
+function sizeView3d() {
+  for (const pane of document.querySelectorAll('#view3dBody .v3dPane')) {
+    const svg = pane.querySelector('svg');
+    const aspect = svg.width.baseVal.value / svg.height.baseVal.value;
+    const fit = Math.min(pane.clientWidth - 2, (window.innerHeight * 0.6 - 2) * aspect);
+    svg.style.width = `${Math.round(fit * view3d[pane.parentNode.dataset.v3d].zoom)}px`;
+  }
+}
+
+function renderView3d() {
+  const body = view3dSection('outside', 'Outside') + view3dSection('floors', 'Floors, walls cut away');
+  $('#view3dShow').innerHTML = SHOW_CHOICES.map(([key, label]) => `<label class="check"><input type="checkbox" data-v3d-show="${key}"${view3d.show[key] ? ' checked' : ''}> ${label}</label>`).join('');
+  $('#view3dBody').innerHTML = body || '<p class="muted">Draw the outline of the house on the exterior sheet, or some rooms, to see them here.</p>';
+}
+
+// One picture drawn again, keeping the middle of what was in sight in the middle.
+function redrawView3d(key) {
+  const old = $(`#view3dBody [data-v3d="${key}"] .v3dPane`);
+  const mid = old && { x: (old.scrollLeft + old.clientWidth / 2) / old.scrollWidth, y: (old.scrollTop + old.clientHeight / 2) / old.scrollHeight };
+  const sec = document.createElement('div');
+  sec.innerHTML = view3dSection(key, key === 'outside' ? 'Outside' : 'Floors, walls cut away');
+  old.parentNode.replaceWith(sec.firstElementChild);
+  sizeView3d();
+  const pane = $(`#view3dBody [data-v3d="${key}"] .v3dPane`);
+  pane.scrollLeft = mid.x * pane.scrollWidth - pane.clientWidth / 2;
+  pane.scrollTop = mid.y * pane.scrollHeight - pane.clientHeight / 2;
+}
+
 $('#btn3d').addEventListener('click', () => {
   closeMenus();
-  const floors = floorsSvg(1200);
-  const outside = outsideSvg(1200);
-  $('#view3dBody').innerHTML = floors || outside
-    ? `${outside ? `<h3>Outside</h3>${outside}` : ''}${floors ? `<h3>Floors, walls cut away</h3>${floors}` : ''}`
-    : '<p class="muted">Draw the outline of the house on the exterior sheet, or some rooms, to see them here.</p>';
+  renderView3d();
   $('#view3dDialog').showModal();
+  sizeView3d();
+});
+
+$('#view3dDialog').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-v3d-turn], button[data-v3d-zoom]');
+  if (!b) return;
+  const key = b.closest('[data-v3d]').dataset.v3d;
+  const v = view3d[key];
+  if (b.dataset.v3dTurn) v.turn = (v.turn + +b.dataset.v3dTurn + 4) % 4;
+  else v.zoom = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, ZOOMS.indexOf(v.zoom) + +b.dataset.v3dZoom))];
+  redrawView3d(key);
+});
+
+$('#view3dShow').addEventListener('change', (e) => {
+  const key = e.target.dataset.v3dShow;
+  if (!key) return;
+  view3d.show[key] = e.target.checked;
+  for (const sec of ['outside', 'floors']) if ($(`#view3dBody [data-v3d="${sec}"]`)) redrawView3d(sec);
+});
+
+// A mouse drags the picture about once it is zoomed in; a finger scrolls it as any page does.
+$('#view3dBody').addEventListener('pointerdown', (e) => {
+  const pane = e.target.closest('.v3dPane');
+  if (!pane || e.pointerType !== 'mouse' || e.button !== 0) return;
+  const start = { x: e.clientX, y: e.clientY, left: pane.scrollLeft, top: pane.scrollTop };
+  const move = (m) => {
+    pane.scrollLeft = start.left - (m.clientX - start.x);
+    pane.scrollTop = start.top - (m.clientY - start.y);
+  };
+  const up = () => {
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+  e.preventDefault();
 });
