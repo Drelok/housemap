@@ -114,7 +114,9 @@ function spotWords(f, p) {
 function stackWords(i) {
   if (!pinned(i)) return [];
   const f = issueFloor(i);
-  const levels = floorLevels();
+  // A floor with nothing drawn on it says nothing about what is above or below, and may be a sheet
+  // made for a floor the house does not have, so it is left out.
+  const levels = floorLevels().filter((g) => g === f || g.rooms.length);
   const at = levels.indexOf(f);
   const line = (g) => {
     const r = roomAt(g, i);
@@ -193,6 +195,9 @@ function photoWords(ph, shot) {
   return `taken on ${where}, facing ${facingWord(shot.dir)}${ph.note ? `. Note: ${lines(ph.note)}` : ''}`;
 }
 
+// The follow-up questions on an issue, in a few words each, for saying which were left unanswered.
+const MORE_SHORT = { started: 'when it started', frequency: 'how often it happens', worse: 'whether it is getting worse', tried: 'what has been tried', who: 'who would do the work' };
+
 function issueBlock(i, o) {
   const cost = issueCost(i);
   const accepted = quotesOf(i).filter((q) => q.status === 'Accepted').map(quoteName).join(' and ');
@@ -205,7 +210,12 @@ function issueBlock(i, o) {
     ...stackWords(i).map(([label, text]) => `- **${label}:** ${text}`),
   ];
   if (i.description) out.push(`- **Description:** ${lines(i.description)}`);
-  for (const m of ISSUE_MORE) out.push(`- **${m[1]}** ${moreAnswer(i, m) ? lines(moreAnswer(i, m)) : 'not answered'}`);
+  // The answered follow-up questions each get a line; the rest are named together on one, so that
+  // a brief of many issues is not mostly "not answered".
+  const unasked = ISSUE_MORE.filter((m) => !moreAnswer(i, m));
+  for (const m of ISSUE_MORE) if (moreAnswer(i, m)) out.push(`- **${m[1]}** ${lines(moreAnswer(i, m))}`);
+  if (unasked.length === ISSUE_MORE.length) out.push('- **Follow-up questions:** none answered');
+  else if (unasked.length) out.push(`- **Not answered:** ${unasked.map((m) => MORE_SHORT[m[0]]).join(', ')}`);
   if (i.photo) out.push(`- **Photo note:** ${lines(i.photo)}`);
   out.push(`- **Cost that counts:** ${cost.quoted ? `accepted quote ${money(cost.low)} (${accepted})` : unpriced(i) ? 'not priced' : `my estimate ${estimateText(i)} (${sourceWords(i)})`}`);
   if (cost.quoted) out.push(`- **My own estimate, before the quote:** ${ownEstimate(i).priced ? `${estimateText(i)} (${sourceWords(i)})` : 'none entered'}`);
@@ -276,6 +286,7 @@ Written by House Map & Issue Tracker on ${today()} from the owner's own plan of 
 - **Floors** are listed from the lowest up. Every floor is drawn to the same measurements, one above the other, so "above" and "below" an issue mean the same spot on another floor. That matters most for leaks.
 - **Issue numbers** are the numbers on the pins in the plan pictures${o.plans ? ', in the `plans` folder' : ''}. A number stays with its issue for good, so gaps in the numbering are issues that were deleted. An issue about a whole floor or the whole house, such as the roof or the wiring, has no pin.
 - **Categories:** ${CATS.map((c) => `*${c.label}*: ${CAT_MEANS[c.id]}`).join('. ')}.
+- **Follow-up questions:** each issue can answer ${ISSUE_MORE.map((m) => `"${m[1]}"`).join(', ')}. The answers given are listed under each issue, and the rest are named as not answered.
 - **Status** is Open, In progress or Done.${o.done ? '' : ' Issues marked Done are left out of this brief.'}
 - **Costs** are in US dollars. *My estimate* is a low and a high figure, marked as the owner's own rough guess or as a figure an AI assistant gave earlier. A professional quote that has been accepted replaces it. "Not priced" means nobody has put a figure on it yet; it does not mean it is free.
 - **Photos** are in the \`photos\` folder, named after the issue they belong to (\`issue-05-photo-1.jpg\` is the first photo of issue 5), and are small copies of the originals.
@@ -347,7 +358,7 @@ async function sheetPicture(width, height) {
 // A picture of each sheet that has something on it: [{ name, data }]. Drawn the way the printed
 // sheets are, by pointing the screen's own drawing at each sheet in turn and then putting it back.
 async function sheetPictures(onStep) {
-  const floors = plan.floors.filter((f) => f.rooms.length || f.items.length);
+  const floors = plan.floors.filter((f) => f.rooms.length || f.items.length || plan.issues.some((i) => i.floorId === f.id && pinned(i)));
   const keep = { floorId, sel, view: { ...view }, layers: { ...layers } };
   const out = [];
   sel = null;
@@ -358,9 +369,7 @@ async function sheetPictures(onStep) {
     for (const [n, f] of floors.entries()) {
       onStep(`Drawing sheet ${n + 1} of ${floors.length}…`);
       floorId = f.id;
-      const house = (exteriorFloor()?.rooms || []).filter((r) => !r.separate);
-      if (f.kind === 'exterior') fitView();
-      else fitView(f.rooms.length ? f.rooms : house);
+      fitSheet(f);
       renderCanvas();
       out.push({ name: `plans/${slug(f.name, 'sheet')}.png`, data: await sheetPicture(AI_PLAN_WIDTH, Math.round(AI_PLAN_WIDTH * AI_PLAN_ASPECT)) });
     }

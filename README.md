@@ -160,22 +160,23 @@ plans/main-floor.png          a picture of each sheet, with the numbered issue p
 photos/issue-05-photo-1.jpg   small copies of each issue's photos, named after the issue
 ```
 
-- **The brief** opens with how to read it (units, directions, what the categories mean) and a request you can paste in. It then lists each floor's rooms with their sizes and fixtures, the house facts, your goals, the walkthrough checklist, the totals, and every issue. Facts and checklist lines you have not answered are listed as such, since they tell the assistant what to ask about. The budget and money boxes under *Goals and limits* are left out unless you tick the box for them.
-- **Where each issue is, in words:** its sheet and room, the nearest wall and how far from it, and any fixture or stairs within 4 ft, such as *Main floor: Kitchen; 2' from the north wall; at the kitchen sink*. Then what is at the same spot on every other floor, such as *Above, on 2nd floor: Bathroom; at the bathtub*, which is what matters most for a leak. An issue pinned on the exterior sheet over the house lists the room under it on each floor.
+- **The brief** opens with how to read it (units, directions, what the categories mean) and a request you can paste in. It then lists each floor's rooms with their sizes and fixtures, the house facts, your goals, the walkthrough checklist, the totals, and every issue. Facts and checklist lines you have not answered are listed as such, since they tell the assistant what to ask about. An issue's follow-up questions (when it started, how often, whether it is getting worse, what has been tried, who would do the work) are listed only where answered; the rest are named together on one line, or as *none answered*. The budget and money boxes under *Goals and limits* are left out unless you tick the box for them.
+- **Where each issue is, in words:** its sheet and room, the nearest wall and how far from it, and any fixture or stairs within 4 ft, such as *Main floor: Kitchen; 2' from the north wall; at the kitchen sink*. Then what is at the same spot on every other floor, such as *Above, on 2nd floor: Bathroom; at the bathtub*, which is what matters most for a leak. A floor sheet with nothing drawn on it is left out of these lines, so an empty sheet for a floor the house does not have does not turn up as *no room is drawn* under every issue. An issue pinned on the exterior sheet over the house lists the room under it on each floor.
 - **North:** set *North is toward* under the house's address in the side panel, to the side of the plan north points to. Walls and photo directions are then given as north, south, east and west. Until it is set they are given by the plan itself, top, bottom, left and right, and the brief says so.
 - **Costs:** each issue gives the figure that counts, the accepted quote or your own estimate, exactly as the Issues sheet totals it, then every quote with its amount, decision, dates (a quote past its valid-until date is marked expired), deposit, warranty and what it includes. An issue with no estimate and no accepted quote reads *not priced*.
+- **Plan pictures:** each sheet is framed to take in every issue pin on it as well as what is drawn, so a pin out in the yard is not cut off. Printed plans are framed the same way.
 - **Photos:** every photo on every marker linked to an issue, 1600 pixels on the long edge, each with the room it was taken in and the way it faces. Pictures the browser cannot draw (RAW, usually HEIC) are left out and named in the brief.
 - **Choices when exporting:** leave out the pictures of the sheets; include issues marked Done; include photos not linked to an issue (under `photos/other/`); include the quote files; include contractors' contact details, which are otherwise left out.
 
 ## Plan file format
 
-`plan.housemap.json`, version 4. **Every length and position is in inches**, x to the right and y down, so 15' 6" is `186`. Values are kept to the nearest quarter of an inch. Inside the app you only ever see and type feet and inches.
+`plan.housemap.json`, version 5. **Every length and position is in inches**, x to the right and y down, so 15' 6" is `186`. Values are kept to the nearest quarter of an inch. Inside the app you only ever see and type feet and inches.
 
-Version 1 and 2 files, which used decimal feet, are converted when opened and saved back as version 4. A file is read as inches only if its `version` is 3 or higher. Version 4 changed only `items`: a version 3 file's items, whose boxes were the space they took up on the sheet, are converted when opened.
+Version 1 and 2 files, which used decimal feet, are converted when opened and saved back as version 5. A file is read as inches only if its `version` is 3 or higher. Version 4 changed only `items`: a version 3 file's items, whose boxes were the space they took up on the sheet, are converted when opened. Version 5 changed only the meaning of an issue's `costLow` and `costHigh` both being `0`: earlier versions could save that for an issue nobody had priced, so in an older file it is read as no estimate (`null`), while from version 5 on it is an estimate of $0 that was typed in.
 
 ```json
 {
-  "version": 4,
+  "version": 5,
   "units": "inches",
   "name": "Maple Street house",
   "address": "",

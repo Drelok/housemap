@@ -16,7 +16,7 @@ const HINTS = {
   select: 'Drag to move. Drag a corner to resize or reshape, or the bar on a wall to move just that wall. Shift-drag a polygon corner to square it up. Drag empty space or a locked room to pan, scroll to zoom. Dragging to the edge scrolls the view.',
   rect: 'Drag to draw a rectangle. Hold Shift for a square. Its size shows at the bottom right.',
   poly: 'Click each corner; hold Shift to keep the side straight. Ctrl-click a point for the wall to curve through it. Click the first corner or press Enter to close. Backspace removes the last corner.',
-  pin: 'Click where the issue is.',
+  pin: 'Click where the issue is. For the roof, the wiring or anything else with no one spot, use Add issue without a pin… on the Issues tab instead.',
   ruler: 'Click two points to read the distance between them. Nothing is changed. Shift keeps the line level or upright.',
   wall: 'Click a wall of the selected outline whose real length you know. A long wall gives the best result.',
   bend: 'Press on a wall of the selected shape and drag to bend it into a curve. The wall then passes through the point you let go at.',
@@ -73,7 +73,7 @@ function newPlan({ name = 'Untitled house', address = '', floors = 1, basement =
   if (basement) sheets.push({ name: 'Basement', kind: 'floor', basement: true });
   for (let n = 1; n <= floors; n++) sheets.push({ name: n === 1 ? 'Main floor' : ordinal(n) + ' floor', kind: 'floor' });
   return {
-    version: 4,
+    version: 5,
     name,
     address,
     floors: sheets.map((s) => ({ id: uid(), ...s, rooms: [], openings: [], items: [] })),
@@ -118,7 +118,7 @@ function scalePlan(p, k, tidy = (v) => v) {
 // The plan as it is written to disk: every length in inches, to the nearest quarter.
 function planFileText(p = plan) {
   const copy = scalePlan(structuredClone(p), 12, (v) => Math.round(v * PER_INCH) / PER_INCH);
-  return JSON.stringify({ version: 4, units: 'inches', ...copy }, null, 2);
+  return JSON.stringify({ version: 5, units: 'inches', ...copy }, null, 2);
 }
 
 // Brings an older or hand-written plan file up to the current shape.
@@ -127,13 +127,18 @@ function normalizePlan(p) {
   // works in, so only version 3 files need converting.
   if (p.version >= 3) scalePlan(p, 1 / 12);
   const boxed = !(p.version >= 4);
-  p.version = 4;
+  const zeroed = !(p.version >= 5);
+  p.version = 5;
   p.name ||= 'Untitled house';
   p.address ||= '';
   p.photos ||= [];
   p.issues.forEach((i, n) => {
     i.photoIds ||= [];
     for (const q of i.quotes || []) q.id ||= uid();
+    // Earlier versions could save 0 and 0 for an issue nobody had priced, which then read as an
+    // estimate of $0 to $0 and counted as priced. In a file from before version 5 that is taken
+    // to be no estimate; from version 5 on, 0 and 0 is an estimate of nothing that was typed in.
+    if (zeroed && i.costLow === 0 && i.costHigh === 0) i.costLow = i.costHigh = null;
     // An issue's number used to be its place in the list, and an issue nobody had priced held 0
     // and 0. Both are put right once, for an issue that has no number of its own yet.
     if (i.num) return;

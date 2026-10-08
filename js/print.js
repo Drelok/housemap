@@ -9,14 +9,22 @@ const PRINT_ASPECT = 0.64; // the share of that page's height left for the plan 
 
 const printDate = () => new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 
-// One sheet, drawn to fill a page. The exterior sheet shows everything on it, the whole lot. A
-// floor is fitted to its own rooms, so the house fills the page however far away a shed or the
-// edge of the lot may be; a floor with no rooms yet is fitted to the outline of the house.
+// Fits the view to a sheet about to be printed or pictured, which has to be the current one. The
+// exterior sheet shows everything on it, the whole lot. A floor is fitted to its own rooms, so the
+// house fills the page however far away a shed or the edge of the lot may be; a floor with no
+// rooms yet is fitted to the outline of the house. Either way every issue pinned on the sheet is
+// taken in too, so that none is cut off at the edge.
+function fitSheet(f) {
+  const house = (exteriorFloor()?.rooms || []).filter((r) => !r.separate);
+  const pins = layers.issues ? plan.issues.filter((i) => i.floorId === f.id && pinned(i)).map((i) => ({ x: i.x - 1, y: i.y - 1, w: 2, h: 2 })) : [];
+  const shapes = f.kind === 'exterior' ? [...f.rooms, ...outlineShapes()] : f.rooms.length ? f.rooms : house;
+  fitView([...shapes, ...pins]);
+}
+
+// One sheet, drawn to fill a page.
 function sheetHtml(f) {
   floorId = f.id;
-  const house = (exteriorFloor()?.rooms || []).filter((r) => !r.separate);
-  if (f.kind === 'exterior') fitView();
-  else fitView(f.rooms.length ? f.rooms : house);
+  fitSheet(f);
   renderCanvas();
   const size = f.kind === 'exterior' ? `Footprint ${sqft(floorArea(f))}` : `Floor area ${sqft(floorArea(f))}`;
   const facts = [plan.address, size, `Grid squares are ${gridStep()} ft`, printDate()].filter(Boolean);
