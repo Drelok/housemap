@@ -55,7 +55,7 @@ const fmtShort = (v) => (Math.abs(v) < 4 ? fmtInches(Math.abs(v) * 12) + '"' : f
 // given; or, with `length`, to a length in feet entered as feet and inches. Cancelling a question
 // that takes an answer resolves to null.
 
-function ask(message, { ok = 'OK', cancel = 'Cancel', danger = false, input = null, length = false, detail = '', check = null, choices = null, choice = '' } = {}) {
+function ask(message, { ok = 'OK', cancel = 'Cancel', danger = false, input = null, length = false, detail = '', check = null, choices = null, choice = '', mustChoose = false } = {}) {
   return new Promise((resolve) => {
     const d = $('#askDialog');
     const field = $('#askInput');
@@ -77,6 +77,8 @@ function ask(message, { ok = 'OK', cancel = 'Cancel', danger = false, input = nu
     $('#askInches').value = '0';
     $('#askOk').textContent = ok;
     $('#askOk').className = danger ? 'danger solid' : 'primary';
+    // With `mustChoose`, OK stays out of use until one of the choices has been picked.
+    $('#askOk').disabled = !!(choices && mustChoose && !choice);
     $('#askCancel').hidden = cancel === null;
     $('#askCancel').textContent = cancel ?? '';
     d.returnValue = '';
@@ -95,6 +97,10 @@ function ask(message, { ok = 'OK', cancel = 'Cancel', danger = false, input = nu
 }
 
 const tell = (message) => ask(message, { cancel: null });
+
+$('#askChoices').addEventListener('change', () => {
+  $('#askOk').disabled = false;
+});
 
 // A button with data-close="cancel" closes the dialog it is in with that answer.
 document.addEventListener('click', (e) => {

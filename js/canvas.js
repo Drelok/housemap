@@ -321,6 +321,7 @@ function renderCanvas() {
 
   // Doors and openings go over the rooms, so that they break the wall lines on either side.
   for (const o of floor().openings) s += openingSvg(o, u, sel?.type === 'opening' && sel.id === o.id);
+  if (floor().kind === 'exterior') s += basementOutsideSvg(u);
   s += `<g class="roomNames">${names}</g>`;
   if (selItem() && isStairs(selItem())) s += itemSvg(selItem(), u, true);
   for (const it of layers.items ? floor().items : []) s += stairsButton(it, u);
@@ -637,6 +638,8 @@ function press(e) {
     renderCanvas();
   } else if (tool === 'door') {
     placeOpening(p);
+  } else if (tool === 'window') {
+    placeWindow(p);
   } else if (tool === 'stairs' || tool === 'item') {
     placeItem(p, tool === 'stairs' ? 'stairs' : '');
   } else if (itemDown(hit, p, e)) {

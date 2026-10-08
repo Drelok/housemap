@@ -73,6 +73,7 @@ const KEYS = [
     ['R', 'Rectangle room'],
     ['P', 'Polygon room'],
     ['D', 'Door or opening'],
+    ['W', 'Window'],
     ['S', 'Stairs'],
     ['F', 'Fixture or appliance'],
     ['I', 'Issue pin'],

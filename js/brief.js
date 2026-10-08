@@ -282,6 +282,32 @@ function issueBlock(i, o) {
   return out.join('\n');
 }
 
+// A room's windows and doors to the outside, wall by wall, those alike counted together:
+// "in the north wall, 2 windows; in the east wall, an egress window with a well (sill 3' 8")".
+function openingsWords(f, r) {
+  const walls = new Map(); // wall -> Map(what -> count)
+  for (const o of f.openings) {
+    if (o.kind !== 'window' && o.kind !== 'exterior') continue;
+    const side = openingSides(o, f).indexOf(r);
+    if (side < 0) continue;
+    // The wall lies away from the room, across the line of the wall.
+    const g = side === 0 ? 1 : -1;
+    const wall = wallWord(o.along === 'x' ? bearingOf(0, g) : bearingOf(g, 0));
+    let what;
+    if (o.kind === 'window') {
+      const k = windowKind(o.style);
+      const extra = [o.style === 'egress' && `sill ${fmtShort(o.sill ?? k.sill)}`, o.note].filter(Boolean).join('; ');
+      what = `${k.short}${o.well ? ' with a well' : ''}${extra ? ` (${extra})` : ''}`;
+    } else {
+      what = `door to the outside${o.onto === 'stairwell' ? ' onto steps up to the yard' : o.onto === 'grade' ? ' onto level ground (a walk-out)' : ''}`;
+    }
+    if (!walls.has(wall)) walls.set(wall, new Map());
+    walls.get(wall).set(what, (walls.get(wall).get(what) || 0) + 1);
+  }
+  const counted = (what, n) => (n === 1 ? `${/^[aeiou]/.test(what) ? 'an' : 'a'} ${what}` : `${n} ${what.replace(/(window|door)/, '$1s')}`);
+  return [...walls].map(([wall, kinds]) => `in ${wall}, ${[...kinds].map(([what, n]) => counted(what, n)).join(' and ')}`).join('; ');
+}
+
 function houseWords() {
   const out = [`- **Name:** ${plan.name}`];
   if (plan.address) out.push(`- **Address:** ${plan.address}`);
@@ -301,6 +327,7 @@ function houseWords() {
         f.basement && (r.finished ? 'finished' : 'unfinished'),
         r.separate && 'separate structure, not part of the house',
         inside.length && `holds ${itemsWords(inside)}`,
+        openingsWords(f, r),
       ].filter(Boolean);
       // Two rooms of one name are told apart by their place in the list.
       const twin = names.filter((n) => n === roomTitle(r)).length > 1 ? ` (${names.slice(0, f.rooms.indexOf(r) + 1).filter((n) => n === roomTitle(r)).length} of ${names.filter((n) => n === roomTitle(r)).length} with this name)` : '';

@@ -219,6 +219,12 @@ $('#inspector').addEventListener('input', (e) => {
     save();
     return renderAll();
   }
+  if (t.id === 'chkWell') {
+    if (t.checked) selOpening().well = true;
+    else delete selOpening().well;
+    save();
+    return renderAll();
+  }
   if (t.id === 'chkSized') {
     plan.exteriorSized = t.checked;
     return save();
@@ -236,6 +242,17 @@ $('#inspector').addEventListener('input', (e) => {
     // A step's height is typed as a plain length; which way it goes is kept in the sign of `level`.
     if (t.dataset.field === 'step') obj.level = feet * (obj.level < 0 ? -1 : 1);
     else obj[t.dataset.field] = feet;
+  } else if (t.dataset.obj === 'opening' && t.dataset.field === 'style') {
+    // A new kind of window starts at its usual width and sill height.
+    const k = windowKind(t.value);
+    Object.assign(obj, { style: k.id, w: fine(k.w), sill: fine(k.sill) });
+    save();
+    return renderAll();
+  } else if (t.dataset.obj === 'opening' && t.dataset.field === 'onto') {
+    if (t.value) obj.onto = t.value;
+    else delete obj.onto;
+    save();
+    return renderAll();
   } else if (t.dataset.obj === 'opening' && t.dataset.field === 'kind') {
     // A new type starts at its standard width.
     obj.kind = t.value;

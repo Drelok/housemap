@@ -159,6 +159,7 @@ function sharedStretch(o) {
 // shared wall for an open side or a half wall.
 function fitOpening(o) {
   const kind = openingKind(o.kind);
+  if (kind.window) return; // a window keeps the width its kind or the owner gave it
   const span = sharedStretch(o);
   if (kind.width) o.w = std(kind.width) * (kind.times || 1);
   // A door wider than the wall it is in, such as sliding doors on a small closet, is cut down to fit.
@@ -196,9 +197,9 @@ function placeOpening(p) {
 }
 
 // The rooms on either side of an opening: [the one above or to the left, the one below or to the right].
-function openingSides(o) {
+function openingSides(o, f = floor()) {
   const c = o.along === 'x' ? 'y' : 'x';
-  return [-1, 1].map((g) => floor().rooms.find((r) => shapeContains(r, { x: o.x, y: o.y, [c]: o[c] + g * (o.t / 2 + 0.1) })) || null);
+  return [-1, 1].map((g) => f.rooms.find((r) => shapeContains(r, { x: o.x, y: o.y, [c]: o[c] + g * (o.t / 2 + 0.1) })) || null);
 }
 
 // The locked room an opening is in a wall of, if there is one. Such an opening cannot be slid
@@ -208,7 +209,7 @@ const lockedBy = (o) => openingSides(o).find((r) => r?.locked) || null;
 // The height of the step through an opening, or 0 when both sides are level or one is outdoors.
 // Nobody walks through a half wall, so it never counts as a step.
 function stepAt(o) {
-  if (o.kind === 'half') return 0;
+  if (o.kind === 'half' || o.kind === 'window') return 0;
   const [a, b] = openingSides(o);
   return a && b ? Math.abs((a.level || 0) - (b.level || 0)) : 0;
 }
@@ -228,6 +229,12 @@ function openingSvg(o, u, on) {
   const g = o.swing ? 1 : -1; // the side the door swings into
   let s = `<rect class="hit" ${box(Math.max(h, 7 * u))}/><rect class="gap" ${box(h + 2 * u)}/>`
     + line('jamb', at(-o.w / 2, -h), at(-o.w / 2, h)) + line('jamb', at(o.w / 2, -h), at(o.w / 2, h));
+  if (o.kind === 'window') {
+    // The usual plan symbol: the two faces of the wall carried across, and the glass between them.
+    s += line('glass', at(-o.w / 2, -h), at(o.w / 2, -h)) + line('glass', at(-o.w / 2, h), at(o.w / 2, h)) + line('glass', at(-o.w / 2, 0), at(o.w / 2, 0));
+    if (o.well) s += wellSvg(o, outsideOf(o), at, h);
+    return `<g class="opening window${on ? ' sel' : ''}" data-kind="opening" data-id="${o.id}"><title>${esc(windowKind(o.style).label)}${o.well ? ', with a window well' : ''}</title>${s}</g>`;
+  }
   // An open side keeps a faint line so the two rooms can still be told apart; a half wall is a
   // lighter band than a full one.
   if (o.kind === 'open') s += line('openEdge', at(-o.w / 2, 0), at(o.w / 2, 0));
@@ -264,11 +271,13 @@ function openingSvg(o, u, on) {
 }
 
 function openingInspector(o) {
+  if (o.kind === 'window') return windowInspector(o);
   const [a, b] = openingSides(o);
   const name = (r) => (r ? esc(roomTitle(r)) + (r.level ? ` (${levelText(r)})` : '') : 'outside, or a space not drawn yet');
   const rise = stepAt(o);
   return `<h2>Door or opening</h2>
-    ${field('Type', 'opening', 'kind', o.kind, { options: OPENING_KINDS.map((k) => [k.id, k.label]) })}
+    ${field('Type', 'opening', 'kind', o.kind, { options: OPENING_KINDS.filter((k) => !k.window).map((k) => [k.id, k.label]) })}
+    ${o.kind === 'exterior' && floor().basement ? `${field('Opens onto', 'opening', 'onto', o.onto || '', { options: DOOR_ONTO })}<p class="muted small">A basement door to the outside is also shown on the exterior sheet, with the stairwell if it has one.</p>` : ''}
     ${lengthField('Width', 'opening', 'w', o.w)}
     ${lengthField('Wall thickness here', 'opening', 't', o.t)}
     <p class="muted small">Round to the nearest 1/4 inch. Fractions are fine: 5 3/4. Choosing a type sets its width: the standard for a door or doorway, or the whole wall the two rooms share for an open side or a half wall. Type a different width if only part of it applies.</p>
@@ -280,6 +289,117 @@ function openingInspector(o) {
       ${openingKind(o.kind).width ? '' : '<button id="btnSpan" title="Stretches this over the whole length of wall the two rooms share">Fit to the shared wall</button>'}
       <button class="danger" id="btnDelete">Delete</button>
     </div>`;
+}
+
+// ---------- windows ----------
+// A window is an opening of its own kind, placed and slid along a wall as a door is. It keeps its
+// kind of window in `style`, its sill height above the floor in `sill`, and `well` when a window
+// well is dug outside it.
+
+async function placeWindow(p) {
+  const wall = wallAt(p);
+  if (!wall) return flash('Click on the wall of a room, where the window is.');
+  const basement = !!floor().basement;
+  // On a basement sheet the basement kinds come first. Nothing is picked until the owner picks it.
+  const kinds = basement ? [...WINDOW_KINDS.filter((k) => k.basement), ...WINDOW_KINDS.filter((k) => !k.basement)] : WINDOW_KINDS;
+  const picked = await ask('What kind of window is it?', {
+    ok: 'Place window',
+    choices: kinds.map((k) => ({ value: k.id, label: k.label })),
+    mustChoose: true,
+    check: { label: 'It has a window well dug outside it', checked: false },
+    detail: basement ? 'In a walk-out basement, a window on the side where the ground is level with the floor is a standard window.' : '',
+  });
+  const well = $('#askCheck').checked;
+  setTool('select');
+  if (!picked || picked === true) return renderCanvas();
+  const k = windowKind(picked);
+  const o = { id: uid(), kind: 'window', style: k.id, along: wall.o, x: 0, y: 0, w: fine(k.w), t: fine(wall.t), sill: fine(k.sill) };
+  if (well) o.well = true;
+  o[wall.k] = fine(wall.mid);
+  o[wall.o] = wall.hi - wall.lo > o.w ? fine(Math.max(wall.lo + o.w / 2, Math.min(wall.hi - o.w / 2, wall.pos))) : fine((wall.lo + wall.hi) / 2);
+  floor().openings.push(o);
+  sel = { type: 'opening', id: o.id };
+  save();
+  renderAll();
+}
+
+function windowInspector(o) {
+  const room = openingSides(o).find(Boolean);
+  const k = windowKind(o.style);
+  return `<h2>Window</h2>
+    ${field('Kind', 'opening', 'style', o.style, { options: WINDOW_KINDS.map((x) => [x.id, x.label]) })}
+    ${lengthField('Width', 'opening', 'w', o.w)}
+    ${lengthField('Sill height above the floor', 'opening', 'sill', o.sill ?? k.sill)}
+    <p class="muted small">Choosing a kind sets the usual width and sill height for it. Type your own where this one differs.</p>
+    ${o.style === 'egress' && o.sill > EGRESS_SILL + 1 / 96 ? `<p class="note step">The sill is higher than the ${fmtShort(EGRESS_SILL)} building codes allow for an egress window. It may be worth tagging as an issue if this is a bedroom.</p>` : ''}
+    <label class="check"><input type="checkbox" id="chkWell"${o.well ? ' checked' : ''}> It has a window well dug outside it</label>
+    ${field('Note', 'opening', 'note', o.note || '')}
+    <p class="muted">In the wall of ${room ? esc(roomTitle(room)) : 'a space not drawn yet'}. Drag it to slide it along the wall.${o.well && floor().basement ? ' Its well is also shown on the exterior sheet.' : ''}</p>
+    <div class="actions"><button class="danger" id="btnDelete">Delete</button></div>`;
+}
+
+// Which side of its wall an opening has the outdoors on: -1 above or to the left, 1 below or to the
+// right, or 0 where that cannot be told. A room on one side only means outdoors on the other; with
+// no room on either side, the exterior outline says which side is inside the house.
+function outsideOf(o, f = floor()) {
+  const [a, b] = openingSides(o, f);
+  if (!a !== !b) return a ? 1 : -1;
+  if (a) return 0;
+  const c = o.along === 'x' ? 'y' : 'x';
+  const inHouse = (g) => (exteriorFloor()?.rooms || []).some((r) => shapeContains(r, { x: o.x, y: o.y, [c]: o[c] + g * (o.t / 2 + 0.5) }));
+  return inHouse(-1) && !inHouse(1) ? 1 : inHouse(1) && !inHouse(-1) ? -1 : 0;
+}
+
+// A window well: a half circle dug outside the wall, a little wider than the window.
+function wellSvg(o, g, at, h) {
+  if (!g) return '';
+  const r = o.w / 2 + 0.25;
+  const pts = Array.from({ length: 13 }, (_, n) => at(-r * Math.cos((n * Math.PI) / 12), g * (h + r * Math.sin((n * Math.PI) / 12))));
+  return `<polygon class="well" points="${pointList(pts)}"/>`;
+}
+
+// What the basement shows outside the house, drawn on the exterior sheet: window wells, doors to
+// the outside, and the stairwell up to the yard that such a door may open onto. Every sheet uses
+// the same measurements, so each is drawn where it is on the basement sheet.
+function basementOutsideSvg(u) {
+  let s = '';
+  for (const f of plan.floors.filter((x) => x.basement)) {
+    for (const o of f.openings) {
+      const well = o.kind === 'window' && o.well;
+      if (!well && o.kind !== 'exterior') continue;
+      const g = outsideOf(o, f);
+      if (!g) continue;
+      const A = o.along === 'x' ? { x: 1, y: 0 } : { x: 0, y: 1 };
+      const at = (a, c) => ({ x: o.x + A.x * a + A.y * c, y: o.y + A.y * a + A.x * c });
+      const h = o.t / 2;
+      let depth = 0;
+      let label = '';
+      if (well) {
+        s += wellSvg(o, g, at, h);
+        depth = o.w / 2 + 0.25;
+        label = o.style === 'egress' ? 'Basement egress window' : 'Basement window well';
+      } else {
+        s += `<line class="bsmtDoor" x1="${at(-o.w / 2, g * h).x}" y1="${at(-o.w / 2, g * h).y}" x2="${at(o.w / 2, g * h).x}" y2="${at(o.w / 2, g * h).y}"/>`;
+        label = 'Basement door';
+        if (o.onto === 'stairwell') {
+          // A stairwell about 5 ft out from the wall, with a line for each step.
+          depth = 5;
+          const p = at(-o.w / 2 - 0.5, g * h);
+          const q = at(o.w / 2 + 0.5, g * (h + depth));
+          s += `<rect class="stairwell" x="${Math.min(p.x, q.x)}" y="${Math.min(p.y, q.y)}" width="${Math.abs(q.x - p.x)}" height="${Math.abs(q.y - p.y)}"/>`;
+          for (let d = 0.9; d < depth; d += 0.9) s += `<line class="stairwell tread" x1="${at(-o.w / 2 - 0.5, g * (h + d)).x}" y1="${at(-o.w / 2 - 0.5, g * (h + d)).y}" x2="${at(o.w / 2 + 0.5, g * (h + d)).x}" y2="${at(o.w / 2 + 0.5, g * (h + d)).y}"/>`;
+          label = 'Basement door and stairwell';
+        } else if (o.onto === 'grade') {
+          label = 'Basement walk-out door';
+        }
+      }
+      // Beyond it, away from the house: centred off a top or bottom wall, and reading outward off a side one.
+      const t = at(0, g * (h + depth + (o.along === 'x' ? 9 : 4) * u));
+      const anchor = o.along === 'x' ? 'middle' : g < 0 ? 'end' : 'start';
+      s += `<text class="bsmtLabel" x="${t.x}" y="${t.y + 3 * u}" font-size="${10 * u}" stroke-width="${3 * u}" style="text-anchor:${anchor}">${label}</text>`;
+    }
+  }
+  return s;
 }
 
 // ---------- floor levels ----------

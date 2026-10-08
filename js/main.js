@@ -193,7 +193,7 @@ document.addEventListener('keydown', (e) => {
   }
   // L locks or unlocks the selected room.
   if (key === 'l' && selRoom()) return toggleLock(selRoom());
-  const toolKey = { v: 'select', escape: 'select', r: 'rect', p: 'poly', i: 'pin', c: 'photo', m: 'ruler', d: 'door', s: 'stairs', f: 'item' }[key];
+  const toolKey = { v: 'select', escape: 'select', r: 'rect', p: 'poly', i: 'pin', c: 'photo', m: 'ruler', d: 'door', w: 'window', s: 'stairs', f: 'item' }[key];
   if (e.key === 'Delete' || e.key === 'Backspace') deleteSelection();
   else if (toolKey && !(INTERIOR_TOOLS.includes(toolKey) && floor().kind === 'exterior')) {
     setTool(toolKey);

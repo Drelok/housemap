@@ -24,6 +24,7 @@ const HINTS = {
   scale: 'Click the two ends of a straight line you know the length of, such as one wall of the house. Shift keeps the line level or upright.',
   photo: 'Click where a photo was taken and drag toward what it is looking at. You choose the photo next.',
   split: 'Click one end of the closet’s opening, on the edge of the selected room, then click across the opening. The smaller piece becomes the closet.',
+  window: 'Click on a wall where a window is. You choose what kind of window it is next, then its width and sill height.',
   door: 'Click on a wall where a door or opening is, on the line between two rooms that are open to each other, or on the end of a staircase. You choose its type and width next.',
   stairs: 'Click where the stairs are. You set their size, their turns, which way they go and the floor they lead to next.',
   item: 'Click where a fixture or appliance stands. You choose what it is next.',
@@ -49,8 +50,23 @@ const OPENING_KINDS = [
   // These two have no standard width: they start out spanning the whole wall the two rooms share.
   { id: 'open', label: 'No wall: the rooms are open to each other' },
   { id: 'half', label: 'Half wall (low wall you can see over)' },
+  // Placed with the Window tool and kept apart from the doors: it has kinds of its own.
+  { id: 'window', label: 'Window', window: true },
 ];
-const INTERIOR_TOOLS = ['door', 'stairs', 'item']; // offered on the floors, not on the exterior sheet
+// Kinds of window: its usual width and sill height above the floor, in feet. A basement window
+// below ground level sits high in the wall, or has a well dug outside it to let light in, or both;
+// an egress window is one big enough to climb out of, which codes want in a basement bedroom.
+const WINDOW_KINDS = [
+  { id: 'standard', label: 'Standard window', short: 'window', w: 3, sill: 3 },
+  { id: 'high', label: 'High basement window: short, near the ceiling, about at ground level', short: 'high basement window', w: 32 / 12, sill: 5, basement: true },
+  { id: 'egress', label: 'Egress window: big enough to climb out of, with the sill no higher than 44"', short: 'egress window', w: 3, sill: 44 / 12, basement: true },
+  { id: 'block', label: 'Glass block window', short: 'glass block window', w: 32 / 12, sill: 5, basement: true },
+];
+const windowKind = (id) => WINDOW_KINDS.find((k) => k.id === id) || WINDOW_KINDS[0];
+const EGRESS_SILL = 44 / 12; // the highest an egress window's sill may be, under the residential code
+// Where a basement door to the outside opens onto.
+const DOOR_ONTO = [['', 'Not said'], ['grade', 'Ground level: a walk-out'], ['stairwell', 'Steps up to the yard: an outside stairwell or bulkhead']];
+const INTERIOR_TOOLS = ['door', 'window', 'stairs', 'item']; // offered on the floors, not on the exterior sheet
 const MAX_RISER = 7.75 / 12; // the tallest single step the current residential code (IRC) allows
 
 // The fixed questions asked about every issue, beyond its description: [key, question, kind].
@@ -103,7 +119,7 @@ function scalePlan(p, k, tidy = (v) => v) {
       at(r, ['x', 'y', 'w', 'h', 'level']);
       for (const pt of r.points || []) at(pt, ['x', 'y']);
     }
-    for (const o of f.openings || []) at(o, ['x', 'y', 'w', 't']);
+    for (const o of f.openings || []) at(o, ['x', 'y', 'w', 't', 'sill']);
     for (const it of f.items || []) {
       at(it, ['x', 'y', 'w', 'h']);
       for (const pt of it.points || []) at(pt, ['x', 'y']);
