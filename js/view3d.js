@@ -95,21 +95,32 @@ function outsideScene() {
   const height = Math.max(1, above.filter((f) => f.rooms.length).length || 1) * storey();
   const parts = [];
   const labels = [];
-  for (const s of shapes) {
-    const top = s.separate ? Math.min(height, 10) : height;
+  const label = (s, z) => {
+    const c = iso(shapeCenter(s), z);
+    return `<text x="${c.x.toFixed(2)}" y="${c.y.toFixed(2)}" font-size="2" text-anchor="middle" fill="#222" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-family="system-ui, sans-serif">${esc(s.name)}</text>`;
+  };
+  // What is not counted as part of the house (a garage, carport, shed or deck) lies flat on the
+  // ground as an outline with its name, under everything else, as how tall it is is not known and
+  // a block for it would only hide the house.
+  for (const s of shapes.filter((x) => x.separate)) {
+    parts.push({ depth: -2e9, svg: `<polygon points="${outlinePoints(s).map((p) => iso(p, 0)).map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#eeebe4" stroke="#8d877b" stroke-width="1.2" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>` });
+    parts.push({ depth: -2e9 + 1, svg: label(s, 0) });
+  }
+  // The parts of the house are drawn one whole block at a time, the farthest first, each with its
+  // walls from the back and its top last, so that no block's top lies over the walls of one nearer.
+  const blocks = shapes.filter((x) => !x.separate).sort((a, b) => nearness(shapeCenter(a)) - nearness(shapeCenter(b)));
+  blocks.forEach((s, n) => {
+    const base = n * 1e6;
     const pts = outlinePoints(s);
     pts.forEach((a0, k) => {
       const b0 = pts[(k + 1) % pts.length];
       const [a, b] = outward(s, a0, b0);
-      const depth = nearness({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-      let svgs = polygon([iso(a, 0), iso(b, 0), iso(b, top), iso(a, top)], wallShade(a, b, s.separate ? [214, 206, 192] : [228, 222, 210]));
-      if (!s.separate) svgs += wallOpenings(a, b, floors, top);
-      parts.push({ depth, svg: svgs });
+      const svgs = polygon([iso(a, 0), iso(b, 0), iso(b, height), iso(a, height)], wallShade(a, b, [228, 222, 210])) + wallOpenings(a, b, floors, height);
+      parts.push({ depth: base + nearness({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), svg: svgs });
     });
-    parts.push({ depth: 1e7, svg: polygon(pts.map((p) => iso(p, top)), s.separate ? '#cfc6b6' : '#b9b2a6') });
-    const c = iso(shapeCenter(s), top + 0.3);
-    labels.push(`<text x="${c.x.toFixed(2)}" y="${c.y.toFixed(2)}" font-size="2" text-anchor="middle" fill="#222" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-family="system-ui, sans-serif">${esc(s.name)}</text>`);
-  }
+    parts.push({ depth: base + 5e5, svg: polygon(pts.map((p) => iso(p, height)), '#b9b2a6') });
+    labels.push(label(s, height + 0.3));
+  });
   return { parts, labels };
 }
 
