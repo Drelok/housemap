@@ -72,6 +72,7 @@ function reportHtml(issues, withPhotos) {
     return `<article class="issue${i.status === 'Done' ? ' done' : ''}">
       <h2><span class="dot" style="background:${cat(i.category).color}"></span>#${issueNum(i)} ${esc(i.title)}</h2>
       <p class="sub">${where.map(esc).join(' · ')}</p>
+      ${i.when || i.trade ? `<p class="desc">${[i.when && `How soon: ${esc(whenWords(i))}`, i.trade && `Trade: ${esc(i.trade)}`].filter(Boolean).join(' · ')}</p>` : ''}
       ${afterOf(i).length ? `<p class="desc">Must be done after ${afterOf(i).map((x) => `#${issueNum(x)} ${esc(x.title)}${x.status === 'Done' ? ' (done)' : ''}`).join(', ')}</p>` : ''}
       ${i.description ? `<p class="desc">${esc(i.description)}</p>` : ''}
       ${more.map((m) => `<p class="desc">${esc(m)}</p>`).join('')}

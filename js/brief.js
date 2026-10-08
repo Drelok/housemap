@@ -190,12 +190,12 @@ const issueShots = (i) => i.photoIds.map((id) => plan.photos.find((p) => p.id ==
 // the names the photos have in the export; without it they are listed by where they are filed.
 function issuesCsv(issues = plan.issues, photoNames = null) {
   const q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const rows = [['#', 'Floor', 'Room', 'Where', 'Title', 'Category', 'Status', 'My estimate low', 'My estimate high', 'Estimate from', 'Accepted quote', 'Added', 'Done on', 'Must be done after', 'Description', ...ISSUE_MORE.map(([, label]) => label), 'Photo', 'Quotes']];
+  const rows = [['#', 'Floor', 'Room', 'Where', 'Title', 'Category', 'Status', 'My estimate low', 'My estimate high', 'Estimate from', 'Accepted quote', 'Added', 'Done on', 'Must be done after', 'How soon', 'Trade', 'May be connected to', 'Description', ...ISSUE_MORE.map(([, label]) => label), 'Photo', 'Quotes', 'AI notes']];
   for (const i of issues) {
     const f = issueFloor(i);
     const photos = issueShots(i).map(({ shot }) => photoNames?.get(i.id + shot.id) || shot.file);
     rows.push([issueNum(i), issuePlace(i), issueRoom(i)?.name || '', pinned(i) ? spotWords(f, i) : '', i.title, cat(i.category).label, i.status, i.costLow, i.costHigh, ownEstimate(i).priced ? sourceWords(i) : '', issueCost(i).quoted ? issueCost(i).low : '',
-      i.added || '', i.status === 'Done' ? i.doneOn || '' : '', afterOf(i).map(issueNum).join('; '), i.description, ...ISSUE_MORE.map((m) => moreAnswer(i, m)), [...photos, i.photo].filter(Boolean).join('; '), quotesOf(i).map(quoteLine).join('; ')]);
+      i.added || '', i.status === 'Done' ? i.doneOn || '' : '', afterOf(i).map(issueNum).join('; '), whenWords(i), i.trade || '', relatedOf(i).map(issueNum).join('; '), i.description, ...ISSUE_MORE.map((m) => moreAnswer(i, m)), [...photos, i.photo].filter(Boolean).join('; '), quotesOf(i).map(quoteLine).join('; '), i.aiNotes || '']);
   }
   return rows.map((r) => r.map(q).join(',')).join('\r\n');
 }
@@ -240,6 +240,9 @@ function photoWords(ph, shot) {
   return `taken on ${where}, facing ${facingWord(shot.dir)}${shot.taken ? `, on ${dateWords(shot.taken)}` : ''}${ph.note ? `. Note: ${lines(ph.note)}` : ''}`;
 }
 
+// How soon an issue should be dealt with, in words.
+const whenWords = (i) => (i.when ? WHEN_CHOICES.find(([v]) => v === i.when)?.[1] || i.when : '');
+
 // Another issue, named in passing: "issue 27 (Roof inspection)", with "done" where it is.
 const issueRef = (x) => `issue ${issueNum(x)} (${x.title || 'Untitled'}${x.status === 'Done' ? ', done' : ''})`;
 
@@ -257,6 +260,9 @@ function issueBlock(i, o) {
     ...(i.added ? [`- **Added to the list:** ${dateWords(i.added)}`] : []),
     ...(afterOf(i).length ? [`- **Must be done after:** ${afterOf(i).map(issueRef).join(', ')}`] : []),
     ...(waitingFor(i).length ? [`- **Waiting for this one:** ${waitingFor(i).map(issueRef).join(', ')}`] : []),
+    ...(i.when ? [`- **How soon:** ${whenWords(i)}`] : []),
+    ...(i.trade ? [`- **Trade:** ${i.trade}`] : []),
+    ...(relatedOf(i).length ? [`- **May be connected to:** ${relatedOf(i).map(issueRef).join(', ')}`] : []),
     `- **Where:** ${issueWhere(i)}`,
     ...stackWords(i).map(([label, text]) => `- **${label}:** ${text}`),
   ];
@@ -268,6 +274,7 @@ function issueBlock(i, o) {
   if (unasked.length === ISSUE_MORE.length) out.push('- **Follow-up questions:** none answered');
   else if (unasked.length) out.push(`- **Not answered:** ${unasked.map((m) => MORE_SHORT[m[0]]).join(', ')}`);
   if (i.photo) out.push(`- **Photo note:** ${lines(i.photo)}`);
+  if (i.aiNotes) out.push(`- **Notes from an earlier AI review:** ${lines(i.aiNotes)}`);
   out.push(`- **Cost that counts:** ${cost.quoted ? `accepted quote ${money(cost.low)} (${accepted})` : unpriced(i) ? 'not priced' : `my estimate ${estimateText(i)} (${sourceWords(i)})`}`);
   if (cost.quoted) out.push(`- **My own estimate, before the quote:** ${ownEstimate(i).priced ? `${estimateText(i)} (${sourceWords(i)})` : 'none entered'}`);
   if (quotesOf(i).length) out.push('- **Professional quotes:**', ...quotesOf(i).map((q) => `  - ${quoteWords(q, o.contacts)}`));
@@ -384,7 +391,7 @@ ${o.aerialName ? `- **Aerial picture:** \`${o.aerialName}\` is a satellite or ae
 
 ## Suggested request
 
-> Here is a brief of my house and the issues I have found in it, with photos and floor plans. Please review the issues: say if any look to be in the wrong category, what should be done first and in what order, which ones may be connected (look at what is above and below each), and what I may have missed, going by the house facts and the walkthrough checklist as well. Take my goals${o.household ? ' and the people who live here' : ''} into account. Give a rough cost range for each issue that is not priced${plan.address ? `, for the area of ${plan.address}` : ' (ask me where the house is)'}. Tell me what else you would need to know to be more sure.
+> Here is a brief of my house and the issues I have found in it, with photos and floor plans. Please review the issues: say if any look to be in the wrong category, what should be done first and in what order, which ones may be connected (look at what is above and below each), and what I may have missed, going by the house facts and the walkthrough checklist as well. Take my goals${o.household ? ' and the people who live here' : ''} into account. Give a rough cost range for each issue that is not priced${plan.address ? `, for the area of ${plan.address}` : ' (ask me where the house is)'}. Tell me what else you would need to know to be more sure. When you are done, also write your answer as described under *Sending your review back* at the end of this file, so that I can bring it into the app.
 
 ## The house
 
@@ -403,7 +410,8 @@ ${totals.join('\n') || '| (none) | 0 | $0 | $0 |'}
 ## Issues
 
 ${o.issues.map((i) => issueBlock(i, o)).join('\n\n') || 'No issues have been recorded.'}
-${other.length ? `\n## Other photos\n\nPhotos placed on the plan that are not linked to an issue.\n\n${other.join('\n')}\n` : ''}`;
+${other.length ? `\n## Other photos\n\nPhotos placed on the plan that are not linked to an issue.\n\n${other.join('\n')}\n` : ''}
+${reviewFormatText()}`;
 }
 
 // ---------- pictures of the sheets ----------

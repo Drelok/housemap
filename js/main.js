@@ -223,4 +223,5 @@ document.addEventListener('focusin', (e) => {
 });
 
 $('#roomNames').innerHTML = ROOM_NAMES.map((n) => `<option value="${esc(n)}">`).join('');
+$('#tradeNames').innerHTML = TRADES.map((n) => `<option value="${esc(n)}">`).join('');
 showLanding();

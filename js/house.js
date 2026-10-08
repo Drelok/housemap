@@ -275,7 +275,7 @@ function renderHouseSheet() {
   $('#houseBody').innerHTML = Object.entries(HOUSE_PARTS).map(([key, [title, html]]) => `<section>
       <h2>${title} <span class="muted">${done[key]} answered</span></h2>
       ${html()}
-    </section>`).join('');
+    </section>`).join('') + reviewsHtml();
 }
 
 wireHouse($('#houseSheet'), renderHouseSheet);

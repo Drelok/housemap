@@ -67,6 +67,14 @@ const EGRESS_SILL = 44 / 12; // the highest an egress window's sill may be, unde
 // Where a basement door to the outside opens onto.
 const DOOR_ONTO = [['', 'Not said'], ['grade', 'Ground level: a walk-out'], ['stairwell', 'Steps up to the yard: an outside stairwell or bulkhead']];
 const INTERIOR_TOOLS = ['door', 'window', 'stairs', 'item'];
+// How soon an issue should be dealt with, kept in `when`: apart from its category, which says how
+// serious it is. A small leak can be minor and still want fixing before winter.
+const WHEN_CHOICES = [['', 'Not said'], ['now', 'Now: it should not wait'], ['month', 'Within a month or so'], ['season', 'This season, before the weather turns'], ['wait', 'It can wait']];
+// The kinds of tradesperson offered for an issue's `trade`. Anything else can be typed.
+const TRADES = ['Roofer', 'Plumber', 'Electrician', 'Heating and cooling (HVAC)', 'Carpenter', 'Mason or concrete', 'Foundation or waterproofing', 'Drywall and painting', 'Flooring', 'Windows and doors', 'Gutters', 'Landscaping and drainage', 'Pest control', 'Environmental testing (radon, mould, asbestos, lead)', 'General contractor', 'Handyman'];
+// The issues an issue may be connected to, such as sharing a cause, kept in `related` on both.
+const relatedOf = (i) => (i.related || []).map((id) => plan.issues.find((x) => x.id === id)).filter(Boolean).sort(byIssueNum);
+
 // A project kept in the browser, rather than in a folder, is lost if the browser's site data is
 // cleared. Past this many days since it was last exported as a zip, the app says so.
 const BACKUP_DAYS = 14;
@@ -151,8 +159,10 @@ function planFileText(p = plan) {
   // An issue that has been deleted, however it went, no longer holds up any other.
   const ids = new Set(copy.issues.map((i) => i.id));
   for (const i of copy.issues) {
-    if (i.after) i.after = i.after.filter((id) => ids.has(id));
-    if (!i.after?.length) delete i.after;
+    for (const key of ['after', 'related']) {
+      if (i[key]) i[key] = i[key].filter((id) => ids.has(id));
+      if (!i[key]?.length) delete i[key];
+    }
   }
   return JSON.stringify({ version: 5, units: 'inches', ...copy }, null, 2);
 }

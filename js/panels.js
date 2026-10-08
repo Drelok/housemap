@@ -71,6 +71,31 @@ function afterHtml(i) {
     </div>`;
 }
 
+// How soon, who by, what it may be connected to, and any notes an AI review has added.
+function issueExtraHtml(i) {
+  const rel = relatedOf(i);
+  const free = plan.issues.filter((x) => x !== i && !rel.includes(x)).sort(byIssueNum);
+  return `<div class="row">
+      ${field('How soon', 'issue', 'when', i.when || '', { options: WHEN_CHOICES })}
+      ${field('Trade', 'issue', 'trade', i.trade || '', { list: 'tradeNames' })}
+    </div>
+    <div class="afterField">
+      <label title="Issues that may share a cause with this one, or be one problem showing in two places, such as a stain on a ceiling under a leaking shower">May be connected to</label>
+      <div class="afterList">${rel.map((x) => `<span class="chip">#${issueNum(x)} ${esc(x.title)}<button type="button" data-rel-drop="${x.id}" title="Takes the connection off both issues" aria-label="Remove">×</button></span>`).join('') || '<span class="muted small">Nothing noted.</span>'}</div>
+      ${free.length ? `<select id="relAdd"><option value="">Note an issue it may be connected to…</option>${free.map((x) => `<option value="${x.id}">#${issueNum(x)} ${esc(x.title)}</option>`).join('')}</select>` : ''}
+    </div>
+    ${i.aiNotes ? field('Notes from an AI review', 'issue', 'aiNotes', i.aiNotes, { area: true }) : ''}`;
+}
+
+// Notes a connection on both issues, or takes it off both.
+function setRelated(a, b, on) {
+  for (const [x, y] of [[a, b], [b, a]]) {
+    x.related = (x.related || []).filter((id) => id !== y.id);
+    if (on) x.related.push(y.id);
+    if (!x.related.length) delete x.related;
+  }
+}
+
 // Said under Applies to for a pinned issue. A pin on a floor that is in no room and in no wall is
 // often meant for the whole floor, so that is pointed out; whether it is, is for the owner to say.
 // On the exterior sheet a pin out in the open is normal: the yard, the driveway, a fence.
@@ -150,6 +175,7 @@ function renderInspector() {
         ${field('Status', 'issue', 'status', i.status, { options: STATUSES.map((v) => [v, v]) })}
       </div>
       ${afterHtml(i)}
+      ${issueExtraHtml(i)}
       ${issueCheckHtml(i)}
       ${field('Description', 'issue', 'description', i.description, { area: true })}
       ${issueMoreHtml(i)}
@@ -314,6 +340,11 @@ $('#inspector').addEventListener('change', (e) => {
   }
   if (e.target.id === 'selLevel') return setLevelDir(selRoom(), e.target.value);
   if (e.target.id === 'issueCheck') return setIssueCheck(selIssue(), e.target.value);
+  if (e.target.id === 'relAdd' && e.target.value) {
+    setRelated(selIssue(), plan.issues.find((x) => x.id === e.target.value), true);
+    save();
+    return renderAll();
+  }
   if (e.target.id === 'afterAdd' && e.target.value) {
     const i = selIssue();
     i.after = [...(i.after || []), e.target.value];
@@ -334,6 +365,12 @@ $('#inspector').addEventListener('change', (e) => {
 });
 
 $('#inspector').addEventListener('click', async (e) => {
+  const unrelate = e.target.closest('[data-rel-drop]')?.dataset.relDrop;
+  if (unrelate) {
+    setRelated(selIssue(), plan.issues.find((x) => x.id === unrelate), false);
+    save();
+    return renderAll();
+  }
   const drop = e.target.closest('[data-after-drop]')?.dataset.afterDrop;
   if (drop) {
     const i = selIssue();

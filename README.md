@@ -180,6 +180,21 @@ photos/issue-05-photo-1.jpg   small copies of each issue's photos, named after t
 - **Aerial picture:** a small copy of the aerial picture on the exterior sheet, if there is one, so the assistant can see the yard, driveway, streets and neighbours that are not drawn. Its top is the top of the plan pictures.
 - **Choices when exporting:** leave out the pictures of the sheets, the close-ups or the aerial picture; include issues marked Done; include photos not linked to an issue (under `photos/other/`); include the quote files; include contractors' contact details, which are otherwise left out; include your budget and money matters; include the Household box. The last three are private and are off unless ticked.
 
+### Bringing the review back
+
+The brief ends with *Sending your review back*: instructions for the assistant to write its answer as a Markdown file, `house-map-review.md`, in its own words for you to read, holding one block of data fenced as `housemap-review`. It lists the house facts that may be answered, the categories and the other values allowed, so any assistant can follow it. The request at the top of the brief asks for it.
+
+*File* → *Import AI review…* reads that file and lists everything it suggests, grouped by issue, each with the assistant's reason and a tick box, all unticked to start (*Tick all* ticks them). Nothing changes until you press *Apply what is ticked*, and one *Undo* takes all of it back. What it can suggest:
+
+- for an issue: a cost estimate, filled into *My estimate* and marked as from an AI assistant (it says when it would replace a figure of your own, and an accepted quote still counts instead); a different category; issues it must be done after (never one that would make a circle); who would do the work and the trade; how soon; issues it may be connected to; and notes and questions, which go into its *Notes from an AI review* box, never into your description
+- new issues it thinks are missing, added without a pin to the whole house or a floor
+- answers for house facts, from the lists in the app only
+- its summary and suggested order of work, kept with the project and shown under *AI reviews* at the end of the House sheet, where each can be deleted
+
+Issue numbers the plan does not have are named and left out. A file whose data block cannot be read says so, and what to ask the assistant for.
+
+- **New fields on an issue:** *How soon* (now, within a month, this season, or it can wait) and *Trade* sit under *Must be done after*; *May be connected to* notes issues that may share a cause, and is kept on both; *Notes from an AI review* shows once a review has added any, and can be edited or cleared. All four go into the CSV, the printed report and the export for AI, and *How soon* and *Trade* show on the Issues sheet's cards.
+
 ## Plan file format
 
 `plan.housemap.json`, version 5. **Every length and position is in inches**, x to the right and y down, so 15' 6" is `186`. Values are kept to the nearest quarter of an inch. Inside the app you only ever see and type feet and inches.
@@ -244,6 +259,8 @@ Version 1 and 2 files, which used decimal feet, are converted when opened and sa
 - **exportedOn:** optional; the day the project was last exported as a zip, as `YYYY-MM-DD`.
 - **rooms** on a floor may hold `cover`, the floor covering: `carpet`, `hardwood`, `engineered`, `laminate`, `vinyl`, `tile`, `concrete` or `other`.
 - **photos:** a marker, and each of its `more`, may hold `taken`, when the photo was taken, as `YYYY-MM-DD HH:MM`. `photoTaken` on the plan holds the same for photos still waiting in `photos/unprocessed`, by file name.
+- **issues** may also hold `when` (`now`, `month`, `season` or `wait`), `trade` (words), `related` (the `id`s of issues it may be connected to, kept on both) and `aiNotes` (notes brought in from AI reviews).
+- **reviews:** optional; summaries kept from AI reviews, each `{ "date", "summary", "order" }`.
 - **household:** optional. `people`, `mobility`, `health`, `pets` and `changes` are words, left out of the export for AI unless asked for.
 - **checklist:** optional; the walkthrough. Each key is one line (`roof`, `gutters`, `grading`, `foundation`, `siding`, `windows`, `attic`, `plumbing`, `waterHeater`, `electrical`, `hvac`, `alarms`, `pests`, `radon`, `hazards`, `outside`) with a `state` of `fine`, `issue` or `unknown`, an optional `note`, and an optional `issueId`, the `id` of the issue added for it.
 - **units:** always `"inches"`. It is there for people reading the file; the app goes by `version`.
@@ -287,6 +304,7 @@ js/search.js      the Find box
 js/print.js       printed floor plans and the issue report
 js/brief.js       the export for AI: the house in words, small photos, pictures of the sheets
 js/house.js       house facts, goals and the walkthrough checklist
+js/review.js      bringing an AI assistant's review back in
 js/landing.js     start page and new project wizard
 js/main.js        toolbar, keyboard and start-up
 ```

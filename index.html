@@ -64,6 +64,7 @@ photos/processed/         placed photos, by floor and room</pre>
         <button id="btnExport" title="Download a copy of the plan file on its own, without photos">Export plan only</button>
         <button id="btnImport" title="Replace this project's plan with a .housemap.json file. Photos are not brought in; to bring a whole project across, start a new project from an exported .zip.">Import plan…</button>
         <button id="btnCsv" title="Download the issue list as a spreadsheet">Export issues (CSV)</button>
+        <button id="btnReview" title="Bring in the review an AI assistant wrote after reading the export for AI: its cost estimates, categories, order of work and notes, each taken only if you tick it">Import AI review…</button>
         <button id="btnAi" title="Download a zip to give to an AI assistant: the house and every issue described in plain words, small copies of the issue photos and a picture of each floor">Export for AI (.zip)…</button>
         <hr>
         <button id="btnPrint" title="Print the floor plans and the issue report, or save them as a PDF">Print or save as PDF… <kbd>Ctrl+P</kbd></button>
@@ -72,6 +73,7 @@ photos/processed/         placed photos, by floor and room</pre>
         <button id="btnClose" title="Save and return to the start page">Close project</button>
       </span>
       <input id="fileInput" type="file" accept=".json,application/json" hidden>
+      <input id="reviewInput" type="file" accept=".md,.markdown,.txt,.json,text/markdown,text/plain,application/json" hidden>
     </span>
     <strong id="planTitle"></strong>
     <span id="saveState" title="The plan is saved automatically as you work"></span>
@@ -298,6 +300,23 @@ photos/processed/         placed photos, by floor and room</pre>
   </form>
 </dialog>
 
+<dialog id="reviewDialog">
+  <form method="dialog">
+    <h2>AI review</h2>
+    <p class="muted" id="reviewIntro"></p>
+    <p class="muted small" id="reviewMissing" hidden></p>
+    <div class="actions">
+      <button type="button" id="btnReviewAll">Tick all</button>
+      <button type="button" id="btnReviewNone">Untick all</button>
+    </div>
+    <div id="reviewList"></div>
+    <div class="actions">
+      <button type="button" data-close="cancel">Cancel</button>
+      <button class="primary" value="ok" id="btnReviewApply">Apply what is ticked</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="askDialog">
   <form method="dialog">
     <p id="askText"></p>
@@ -333,6 +352,7 @@ photos/processed/         placed photos, by floor and room</pre>
 <div id="printArea"></div>
 <div id="lightbox" hidden></div>
 <datalist id="roomNames"></datalist>
+<datalist id="tradeNames"></datalist>
 
 <script src="js/load.js"></script>
 </body>
