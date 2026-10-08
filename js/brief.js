@@ -99,9 +99,35 @@ function itemGap(it, p) {
   return Math.max(0, Math.hypot(p.x - c.x, p.y - c.y) - Math.min(it.w, it.h) / 2);
 }
 
+// Fixtures of one kind are counted together where they are listed, as a run of counter pieces is:
+// "3 counters or islands, the kitchen sink". One with a note of its own is listed by itself.
+const pluralWord = (w) => w + (/(s|sh|ch|x)$/.test(w) ? 'es' : 's');
+function pluralName(it) {
+  if (isStairs(it)) return 'staircases';
+  const label = itemKind(it.kind)?.label;
+  if (!label) return 'fixtures of no chosen type';
+  return label.toLowerCase().split(' or ').map((part) => part.replace(/\w+$/, pluralWord)).join(' or ');
+}
+function itemsWords(items) {
+  const groups = new Map();
+  for (const it of items) {
+    const key = it.note ? it.id : isStairs(it) ? 'stairs' : it.kind || '';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(it);
+  }
+  return [...groups.values()].map((g) => (g.length === 1 ? itemName(g[0]) : `${g.length} ${pluralName(g[0])}`)).join(', ');
+}
+
 // The fixtures and stairs close to a point on a floor, nearest first: "at the bathtub", "about 2' from the toilet".
+// Only the nearest of each kind is given, so a pin beside a run of counter pieces is not "at the
+// counter; at the counter; about 1' from the counter".
 function itemsNear(f, p) {
-  return (f?.items || []).map((it) => ({ it, d: itemGap(it, p) })).filter((v) => v.d <= NEAR_FIXTURE).sort((a, b) => a.d - b.d).slice(0, 3)
+  const seen = new Set();
+  return (f?.items || []).map((it) => ({ it, d: itemGap(it, p) })).filter((v) => v.d <= NEAR_FIXTURE).sort((a, b) => a.d - b.d)
+    .filter(({ it }) => {
+      const key = it.note ? it.id : isStairs(it) ? 'stairs' : it.kind || '';
+      return !seen.has(key) && seen.add(key);
+    }).slice(0, 3)
     .map(({ it, d }) => (d < 0.25 ? `${isStairs(it) ? 'on' : 'at'} ${itemName(it)}` : `about ${about(d)} from ${itemName(it)}`));
 }
 
@@ -269,7 +295,7 @@ function houseWords() {
         r.level && `floor is ${levelText(r)}`,
         f.basement && (r.finished ? 'finished' : 'unfinished'),
         r.separate && 'separate structure, not part of the house',
-        inside.length && `holds ${inside.map(itemName).join(', ')}`,
+        inside.length && `holds ${itemsWords(inside)}`,
       ].filter(Boolean);
       // Two rooms of one name are told apart by their place in the list.
       const twin = names.filter((n) => n === roomTitle(r)).length > 1 ? ` (${names.slice(0, f.rooms.indexOf(r) + 1).filter((n) => n === roomTitle(r)).length} of ${names.filter((n) => n === roomTitle(r)).length} with this name)` : '';
@@ -306,7 +332,7 @@ Written by House Map & Issue Tracker on ${today()} from the owner's own plan of 
 - **Follow-up questions:** each issue can answer ${ISSUE_MORE.map((m) => `"${m[1]}"`).join(', ')}. The answers given are listed under each issue, and the rest are named as not answered.
 - **Status** is Open, In progress or Done.${o.done ? '' : ' Issues marked Done are left out of this brief.'}
 - **Costs** are in US dollars. *My estimate* is a low and a high figure, marked as the owner's own rough guess or as a figure an AI assistant gave earlier. A professional quote that has been accepted replaces it. "Not priced" means nobody has put a figure on it yet; it does not mean it is free.
-- **Photos** are in the \`photos\` folder, named after the issue they belong to (\`issue-05-photo-1.jpg\` is the first photo of issue 5), and are small copies of the originals.
+${o.aerialName ? `- **Aerial picture:** \`${o.aerialName}\` is a satellite or aerial picture of the lot, which the owner traced the outline of the house from. It shows what the plans leave out: the yard, patio, driveway, trees, streets and neighbours, and so which way water runs. Its top is the top of the plan pictures.\n` : ''}- **Photos** are in the \`photos\` folder, named after the issue they belong to (\`issue-05-photo-1.jpg\` is the first photo of issue 5), and are small copies of the originals.
 - \`issues.csv\` holds the same issues as a table.
 
 ## Suggested request
@@ -444,6 +470,16 @@ async function exportForAi(o, onStep = () => {}) {
     }
   }
   if (o.plans) entries.push(...await sheetPictures(onStep));
+  // The aerial picture, as a small copy like the photos. It is not turned, so its top is the top
+  // of the plan pictures.
+  if (o.aerial && plan.aerial?.file) {
+    onStep('Aerial picture…');
+    const copy = await smallPhoto(plan.aerial.file);
+    if (copy) {
+      o = { ...o, aerialName: 'plans/aerial' + extOf(copy.name) };
+      entries.push({ name: o.aerialName, data: copy.data });
+    }
+  }
   const text = (s) => new Blob([s]);
   entries.unshift(
     { name: 'README-FIRST.md', data: text(briefText({ ...o, issues, photoNames, otherPhotos })) },

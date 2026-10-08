@@ -157,6 +157,8 @@ aside { width: 360px; background: #fff; border-left: 1px solid #ddd; display: fl
 .note.issueLink { margin: 0 0 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .note.issueLink .dot { margin: 0; flex: none; }
 .note.issueLink button { margin-left: auto; font-size: 12px; padding: 2px 8px; }
+.note.issueLink button + button { margin-left: 0; }
+.note.issueLink select { flex: 1 1 200px; min-width: 0; font: inherit; font-size: 12px; padding: 2px 4px; }
 .note.pick { margin: 0 0 8px; background: #e0f2f1; color: #00695c; font-weight: 600; }
 .plan .photo.empty > line:first-child { stroke: #8a8a8a; }
 .plan .photo.empty polygon { fill: #8a8a8a; }

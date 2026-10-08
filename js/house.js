@@ -13,6 +13,7 @@ const UNKNOWN = 'Don’t know';
 const FACTS = [
   ['built', 'Year built', 'year'],
   ['foundation', 'Foundation', ['Full basement', 'Partial basement', 'Crawl space', 'Concrete slab', 'Piers or posts', 'More than one kind']],
+  ['basementWalls', 'Basement walls', ['Poured concrete', 'Concrete block', 'Stone', 'Brick', 'Wood', 'No basement']],
   ['walls', 'Outside walls', ['Wood or fibre-cement siding', 'Vinyl or metal siding', 'Brick or stone veneer', 'Solid brick or stone', 'Stucco', 'More than one kind']],
   ['roof', 'Roof covering', ['Asphalt shingles', 'Metal', 'Tile or slate', 'Wood shakes', 'Flat or membrane', 'More than one kind']],
   ['roofYear', 'Roof last replaced (year)', 'year'],
@@ -32,6 +33,15 @@ const FACTS = [
   ['events', 'What has happened to the house: storms, floods, fires, big repairs, insurance claims', 'area'],
   ['other', 'Anything else worth knowing', 'area'],
 ];
+
+// An answer that leaves out which kinds, or what else, gets a box beside it to say so. What is
+// typed there is kept under the fact's key with "Detail" on the end, such as `foundationDetail`.
+const DETAIL_ANSWERS = ['More than one kind', 'Partial basement', 'Something else', 'Both'];
+const DETAIL_HINTS = {
+  foundation: 'Which part is which, such as: basement under the main house, crawl space under the addition, slab under the garage',
+  'Partial basement': 'What is under the rest of the house: crawl space, slab',
+};
+const detailHint = (key, answer) => DETAIL_HINTS[answer] || DETAIL_HINTS[key] || 'Which kinds, and where';
 
 const GOALS = [
   ['plan', 'Plans for the house', ['Staying for many years', 'Staying a few years', 'Selling soon', 'Renting it out', 'Not decided']],
@@ -85,7 +95,12 @@ const houseProgress = () => ({
 function houseField(group, [key, label, kind], obj) {
   const at = `data-house="${group}" data-key="${key}"`;
   const v = obj[key] ?? '';
-  if (Array.isArray(kind)) return `<label>${label}<select ${at}>${['', ...kind, UNKNOWN].map((o) => `<option${o === v ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></label>`;
+  if (Array.isArray(kind)) {
+    const select = `<label>${label}<select ${at}>${['', ...kind, UNKNOWN].map((o) => `<option${o === v ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></label>`;
+    if (!DETAIL_ANSWERS.includes(v)) return select;
+    const detail = obj[key + 'Detail'] ?? '';
+    return `${select}<label class="wide">${label}: which, and where<input data-house="${group}" data-key="${key}Detail" placeholder="${esc(detailHint(key, v))}" value="${esc(detail)}"></label>`;
+  }
   if (kind === 'area') return `<label class="wide">${label}<textarea ${at}>${esc(v)}</textarea></label>`;
   if (kind === 'year') return `<label>${label}<input ${at} type="number" min="1700" max="2100" step="1" placeholder="Leave empty if not known" value="${esc(v)}"></label>`;
   return `<label class="wide">${label}<input ${at} value="${esc(v)}"></label>`;
@@ -109,6 +124,14 @@ function goalsHtml() {
     </div>`;
 }
 
+// A list of the issues already made, to link one to a checklist line instead of adding another.
+function linkChoice(key) {
+  if (!plan.issues.length) return '';
+  const issues = [...plan.issues].sort((a, b) => issueNum(a) - issueNum(b));
+  return `<select data-check-link="${key}" title="Links an issue already made, such as one pinned on the plan, to this line">
+      <option value="">or link one already made…</option>${issues.map((i) => `<option value="${i.id}">#${issueNum(i)} ${esc(i.title)}</option>`).join('')}</select>`;
+}
+
 function checklistHtml() {
   const row = ([key, label, hint]) => {
     const c = houseChecks()[key] || {};
@@ -118,11 +141,12 @@ function checklistHtml() {
         <div class="states">${CHECK_STATES.map(([v, l]) => `<label class="check"><input type="radio" name="check-${key}" data-check="${key}" value="${v}"${c.state === v ? ' checked' : ''}> ${l}</label>`).join('')}</div>
         <input data-house="check" data-key="${key}" placeholder="Note" value="${esc(c.note || '')}">
         ${issue ? `<p class="note issueLink"><span class="dot" style="background:${cat(issue.category).color}"></span>Issue #${issueNum(issue)}: <b>${esc(issue.title)}</b> · ${esc(issue.status)}
-            <button type="button" data-check-goto="${key}" title="Shows that issue under the Issues tab">Go to issue</button></p>`
-          : c.state === 'issue' ? `<p class="note issueLink">No issue has been added for this yet. <button type="button" data-check-add="${key}">Add an issue</button></p>` : ''}
+            <button type="button" data-check-goto="${key}" title="Shows that issue under the Issues tab">Go to issue</button>
+            <button type="button" data-check-unlink="${key}" title="Leaves the issue as it is, and this line marked Issue with no issue linked">Unlink</button></p>`
+          : c.state === 'issue' ? `<p class="note issueLink">No issue is linked to this yet. <button type="button" data-check-add="${key}">Add an issue</button>${linkChoice(key)}</p>` : ''}
       </div>`;
   };
-  return `<p class="muted">Walk round the house with this list and mark each line. It is here to catch what a list of pinned issues misses: the things that belong to the whole house and so never get a pin. Marking a line <i>Issue</i> offers to add one for it.</p>
+  return `<p class="muted">Walk round the house with this list and mark each line. It is here to catch what a list of pinned issues misses: the things that belong to the whole house and so never get a pin. Marking a line <i>Issue</i> offers to add one for it, or to link one you have already made.</p>
     <div class="checkList">${CHECKS.map(row).join('')}</div>`;
 }
 
@@ -165,17 +189,29 @@ function wireHouse(el, redraw) {
     save(true);
   });
   el.addEventListener('change', (e) => {
-    const { house, key, check } = e.target.dataset;
+    const { house, key, check, checkLink } = e.target.dataset;
     if (check) return setCheck(check, e.target.value, redraw);
+    if (checkLink && e.target.value) {
+      Object.assign((houseChecks()[checkLink] ||= {}), { state: 'issue', issueId: e.target.value });
+      save();
+      return redraw();
+    }
     if (!house || !e.target.matches('select')) return;
     if (house === 'north') plan.north = e.target.value === '' ? null : +e.target.value;
     else ({ facts: houseFacts, goals: houseGoals, money: houseMoney }[house]())[key] = e.target.value;
     save();
+    // An answer such as "More than one kind" brings a box to say which; another takes it away.
+    if (house === 'facts') redraw();
   });
   el.addEventListener('click', (e) => {
-    const { checkGoto, checkAdd } = e.target.dataset;
+    const { checkGoto, checkAdd, checkUnlink } = e.target.dataset;
     if (checkAdd) {
       addCheckIssue(checkAdd);
+      redraw();
+    }
+    if (checkUnlink) {
+      delete houseChecks()[checkUnlink].issueId;
+      save();
       redraw();
     }
     if (checkGoto) showCheckIssue(checkIssue(checkGoto));
@@ -209,6 +245,12 @@ wireHouse($('#houseSheet'), renderHouseSheet);
 
 const yearWords = (y) => `${y} (about ${Math.max(0, new Date().getFullYear() - y)} years ago)`;
 
+// What was typed beside an answer such as "More than one kind", while that answer still stands.
+function factDetail(key) {
+  const detail = houseFacts()[key + 'Detail'];
+  return detail && DETAIL_ANSWERS.includes(houseFacts()[key]) ? `: ${lines(detail)}` : '';
+}
+
 function houseBrief(withMoney) {
   const say = (obj) => ([key, label, kind]) => `- **${label}:** ${obj[key] === undefined || obj[key] === '' ? 'not answered' : kind === 'year' ? yearWords(obj[key]) : lines(obj[key])}`;
   const checks = CHECKS.map(([key, label]) => {
@@ -221,7 +263,7 @@ function houseBrief(withMoney) {
 
 "Not answered" and "${UNKNOWN}" both mean the owner could not say; these are worth asking about, or working out from the photos.
 
-${FACTS.map(say(houseFacts())).join('\n')}
+${FACTS.map((f) => say(houseFacts())(f) + factDetail(f[0])).join('\n')}
 
 ## Goals and limits
 
