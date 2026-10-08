@@ -125,6 +125,21 @@ function twinNote(r) {
   return twins ? `${twins === 1 ? 'Another room' : `${twins} other rooms`} on this sheet ${twins === 1 ? 'is' : 'are'} also called “${r.name}”. Their photos go in one folder, and lists and reports cannot tell them apart. A name of its own, such as “${r.name} 2” or “${r.name}, north”, avoids that.` : '';
 }
 
+// Walls, paint, trim and ceiling, folded away until wanted.
+function finishesHtml(r) {
+  const any = r.walls || r.paint || r.sheen || r.trim || r.ceilingFinish || r.ceiling;
+  return `<details class="finishes"${any ? ' open' : ''}>
+      <summary>Finishes: walls, paint and ceiling</summary>
+      ${field('Walls', 'room', 'walls', r.walls || '', { options: WALL_FINISHES })}
+      <div class="row">${field('Paint colour', 'room', 'paint', r.paint || '')}${field('Sheen', 'room', 'sheen', r.sheen || '', { options: SHEENS })}</div>
+      <p class="muted small">Brand, colour name and code, as on the can's lid: Behr Swiss Coffee 12.</p>
+      ${field('Trim colour', 'room', 'trim', r.trim || '')}
+      ${field('Ceiling', 'room', 'ceilingFinish', r.ceilingFinish || '', { options: CEILING_FINISHES })}
+      ${lengthField('Ceiling height', 'room', 'ceiling', roomCeiling(r))}
+      <p class="muted small">${r.ceiling ? '' : `The house standard, ${fmtLen(std('ceiling'))}, until another is typed. `}Walls about ${Math.round(wallArea(r))} sq ft to paint, taking nothing off for doors and windows.</p>
+    </details>`;
+}
+
 const DUP_BUTTON = '<button id="btnDuplicate" title="Makes a copy beside this one, selected and ready to drag into place">Duplicate <kbd>Ctrl+D</kbd></button>';
 
 function renderInspector() {
@@ -151,7 +166,7 @@ function renderInspector() {
       <p class="note step" id="twinNote"${twinNote(r) ? '' : ' hidden'}>${esc(twinNote(r))}</p>
       ${size}
       <p class="muted">Area: <span id="area">${Math.round(shapeArea(r))}</span> sq ft</p>
-      ${f.kind === 'exterior' ? '' : partOfHtml(r) + levelHtml(r) + field('Floor covering', 'room', 'cover', r.cover || '', { options: FLOOR_COVERS })}
+      ${f.kind === 'exterior' ? '' : partOfHtml(r) + levelHtml(r) + field('Floor covering', 'room', 'cover', r.cover || '', { options: FLOOR_COVERS }) + finishesHtml(r)}
       <label class="check" title="A locked shape can still be selected and changed here in the side panel, but dragging on it moves the view instead of the shape, and it has no handles to catch by accident"><input type="checkbox" id="chkLocked"${r.locked ? ' checked' : ''}> Locked in place <kbd>L</kbd>: dragging on it moves the view, not the ${f.kind === 'exterior' ? 'shape' : 'room'}</label>
       ${f.basement ? `<label class="check" title="Finished, heated living space in a basement counts toward the Total House Area. Unfinished space, such as storage or a utility room, does not."><input type="checkbox" id="chkFinished"${r.finished ? ' checked' : ''}> Finished basement: counted in the Total House Area</label>` : ''}
       <label class="check" title="For a carport, shed, deck or anything else that is not part of the house itself"><input type="checkbox" id="chkSeparate"${r.separate ? ' checked' : ''}> Separate structure: not counted in the total, never combined</label>

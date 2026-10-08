@@ -500,3 +500,7 @@ button.camera { display: none; }
 @media (max-height: 500px) {
   #viewBar button { min-height: 40px; }
 }
+
+/* ---------- a room's finishes ---------- */
+details.finishes { margin: 4px 0 10px; border: 1px solid #ddd; border-radius: 5px; padding: 0 8px; }
+details.finishes summary { cursor: pointer; padding: 6px 0; font-size: 13px; color: #24476b; }
