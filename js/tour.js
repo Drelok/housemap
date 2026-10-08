@@ -178,12 +178,25 @@ const TOUR = [
     },
   },
   {
-    title: 'Quotes from professionals',
-    text: 'This roof issue is about the whole house, so it has no pin. It has three quotes, each with your rating of the company and notes on how it went; the declined one is left out of the quoted range. Accepting a quote makes its figure the cost used in every total. The bonus room stain waits for this one: it is in its <b>Order of work</b>.',
-    tryIt: 'Open one of the quotes and look at its rating.',
-    at: '#btnAddQuote',
+    title: 'Every issue in one list',
+    text: 'The <b>Issues</b> tab lists them all, with filters and grouping, what each is estimated or quoted to cost, and the totals. It is also where to find an issue with no pin, such as one about the whole house or a whole floor, as it has no spot on a plan. <b>Show on plan</b> goes to an issue’s pin, and <b>Add professional quote</b> starts a quote for it.',
+    at: '#tabIssues',
     go() {
-      tourIssueGo(2);
+      $('#tabIssues').click();
+      tourPlan();
+    },
+  },
+  {
+    title: 'Quotes from professionals',
+    text: 'The roof is about the whole house, so it has no pin and is found here on the Issues tab. Selected, it opens in the side panel. It has three quotes, each with your rating of the company and notes on how it went; the declined one is left out of the quoted range. Accepting a quote makes its figure the cost used in every total. The bonus room stain waits for this one: it is in its <b>Order of work</b>.',
+    tryIt: 'Open one of the quotes in the side panel and look at its rating.',
+    at: '.issueCard.sel, #btnAddQuote',
+    go() {
+      const i = tourIssue(2);
+      $('#tabIssues').click();
+      if (i) sel = { type: 'issue', id: i.id };
+      renderAll();
+      if (viewsOn()) showView('issues');
     },
   },
   {
@@ -192,15 +205,6 @@ const TOUR = [
     at: '#inspector',
     go() {
       tourIssueGo(5);
-    },
-  },
-  {
-    title: 'Every issue in one list',
-    text: 'The <b>Issues</b> tab lists them all, with filters and grouping, what each is estimated or quoted to cost, and the totals. <b>Show on plan</b> goes to the pin, and <b>Add professional quote</b> starts a quote for it.',
-    at: '#tabIssues',
-    go() {
-      $('#tabIssues').click();
-      tourPlan();
     },
   },
   {
@@ -295,6 +299,20 @@ function tourShow(n) {
   if (ring) {
     ring.classList.add('tourRing');
     ring.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    tourClear(ring);
+  }
+}
+
+// Scrolls what a step rings up from under the card, where what holds it can scroll that far.
+function tourClear(el) {
+  const card = $('#tourCard').getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  if (r.bottom <= card.top || r.top >= card.bottom || r.right <= card.left || r.left >= card.right) return;
+  for (let box = el.parentElement; box; box = box.parentElement) {
+    if (box.scrollHeight <= box.clientHeight || !/auto|scroll/.test(getComputedStyle(box).overflowY)) continue;
+    // Its top is brought to the top of what scrolls, or as near as keeps it above the card.
+    box.scrollTop += Math.min(r.top - box.getBoundingClientRect().top - 8, r.bottom - card.top + 12);
+    return;
   }
 }
 
