@@ -337,13 +337,13 @@ ${o.aerialName ? `- **Aerial picture:** \`${o.aerialName}\` is a satellite or ae
 
 ## Suggested request
 
-> Here is a brief of my house and the issues I have found in it, with photos and floor plans. Please review the issues: say if any look to be in the wrong category, what should be done first and in what order, which ones may be connected (look at what is above and below each), and what I may have missed, going by the house facts and the walkthrough checklist as well. Take my goals into account. Give a rough cost range for each issue that is not priced${plan.address ? `, for the area of ${plan.address}` : ' (ask me where the house is)'}. Tell me what else you would need to know to be more sure.
+> Here is a brief of my house and the issues I have found in it, with photos and floor plans. Please review the issues: say if any look to be in the wrong category, what should be done first and in what order, which ones may be connected (look at what is above and below each), and what I may have missed, going by the house facts and the walkthrough checklist as well. Take my goals${o.household ? ' and the people who live here' : ''} into account. Give a rough cost range for each issue that is not priced${plan.address ? `, for the area of ${plan.address}` : ' (ask me where the house is)'}. Tell me what else you would need to know to be more sure.
 
 ## The house
 
 ${houseWords()}
 
-${houseBrief(o.money)}
+${houseBrief(o.money, o.household)}
 
 ## Totals
 

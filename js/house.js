@@ -56,6 +56,17 @@ const GOALS_MONEY = [
   ['notes', 'Other money matters: financing, insurance, what is already set aside', 'area'],
 ];
 
+// Who lives in the house, which decides what matters most: a walk-in shower for someone who finds
+// a bath hard to step into, mould for someone with asthma. Kept in `plan.household`, and left out
+// of exports unless asked for, as it says private things about the people.
+const HOUSEHOLD = [
+  ['people', 'Who lives here: how many adults and children, and roughly how old', 'area'],
+  ['mobility', 'Anyone who finds stairs, steps or a bathtub hard, or uses a cane, walker or wheelchair', 'area'],
+  ['health', 'Health the house can affect: asthma, allergies, or anyone more at risk from mould, radon, lead or carbon monoxide', 'area'],
+  ['pets', 'Pets', 'text'],
+  ['changes', 'Changes coming: someone moving in or out, a baby, staying on into old age', 'area'],
+];
+
 // [key, what to look at, what to look for]
 const CHECKS = [
   ['roof', 'Roof', 'missing or curled shingles, sagging, flashing round chimneys and vents'],
@@ -81,6 +92,8 @@ const houseFacts = () => (plan.facts ||= {});
 const houseGoals = () => (plan.goals ||= {});
 const houseMoney = () => (houseGoals().money ||= {});
 const houseChecks = () => (plan.checklist ||= {});
+const houseHousehold = () => (plan.household ||= {});
+const HOUSE_GROUPS = { facts: houseFacts, goals: houseGoals, money: houseMoney, household: houseHousehold };
 // The issue a checklist line led to, if it is still there.
 const checkIssue = (key) => plan.issues.find((i) => i.id === houseChecks()[key]?.issueId);
 const filled = (list, obj) => list.filter(([key]) => obj[key] !== undefined && obj[key] !== '').length;
@@ -88,6 +101,7 @@ const filled = (list, obj) => list.filter(([key]) => obj[key] !== undefined && o
 const houseProgress = () => ({
   facts: `${filled(FACTS, houseFacts())} of ${FACTS.length}`,
   goals: `${filled(GOALS, houseGoals())} of ${GOALS.length}`,
+  household: `${filled(HOUSEHOLD, houseHousehold())} of ${HOUSEHOLD.length}`,
   checklist: `${CHECKS.filter(([key]) => houseChecks()[key]?.state).length} of ${CHECKS.length}`,
 });
 
@@ -124,6 +138,13 @@ function goalsHtml() {
     </div>`;
 }
 
+function householdHtml() {
+  return `<div class="moneyBox">
+      <p class="muted small">Private, so kept apart like the money box: left out of the export for AI unless you tick the box for it when exporting. Who lives in a house decides what matters most in it, such as a walk-in shower for someone who finds a bath hard to step into, or damp and mould for someone with asthma.</p>
+      <div class="houseForm">${HOUSEHOLD.map((h) => houseField('household', h, houseHousehold())).join('')}</div>
+    </div>`;
+}
+
 // A list of the issues already made, to link one to a checklist line instead of adding another.
 function linkChoice(key) {
   if (!plan.issues.length) return '';
@@ -150,7 +171,7 @@ function checklistHtml() {
     <div class="checkList">${CHECKS.map(row).join('')}</div>`;
 }
 
-const HOUSE_PARTS = { facts: ['House facts', factsHtml], goals: ['Goals and limits', goalsHtml], checklist: ['Walkthrough checklist', checklistHtml] };
+const HOUSE_PARTS = { facts: ['House facts', factsHtml], goals: ['Goals and limits', goalsHtml], household: ['Household', householdHtml], checklist: ['Walkthrough checklist', checklistHtml] };
 
 // Adds an issue for a line of the checklist: one about the whole house, with no pin, named after
 // the line and carrying its note. It can be described, and pinned, under the Issues tab.
@@ -185,7 +206,7 @@ function wireHouse(el, redraw) {
     if (!house || e.target.matches('select')) return;
     const typed = e.target.type === 'number' ? (e.target.value === '' ? '' : +e.target.value) : e.target.value;
     if (house === 'check') (houseChecks()[key] ||= {}).note = typed;
-    else ({ facts: houseFacts, goals: houseGoals, money: houseMoney }[house]())[key] = typed;
+    else HOUSE_GROUPS[house]()[key] = typed;
     save(true);
   });
   el.addEventListener('change', (e) => {
@@ -198,7 +219,7 @@ function wireHouse(el, redraw) {
     }
     if (!house || !e.target.matches('select')) return;
     if (house === 'north') plan.north = e.target.value === '' ? null : +e.target.value;
-    else ({ facts: houseFacts, goals: houseGoals, money: houseMoney }[house]())[key] = e.target.value;
+    else HOUSE_GROUPS[house]()[key] = e.target.value;
     save();
     // An answer such as "More than one kind" brings a box to say which; another takes it away.
     if (house === 'facts') redraw();
@@ -251,7 +272,7 @@ function factDetail(key) {
   return detail && DETAIL_ANSWERS.includes(houseFacts()[key]) ? `: ${lines(detail)}` : '';
 }
 
-function houseBrief(withMoney) {
+function houseBrief(withMoney, withHousehold) {
   const say = (obj) => ([key, label, kind]) => `- **${label}:** ${obj[key] === undefined || obj[key] === '' ? 'not answered' : kind === 'year' ? yearWords(obj[key]) : lines(obj[key])}`;
   const checks = CHECKS.map(([key, label]) => {
     const c = houseChecks()[key] || {};
@@ -268,6 +289,10 @@ ${FACTS.map((f) => say(houseFacts())(f) + factDetail(f[0])).join('\n')}
 ## Goals and limits
 
 ${GOALS.map(say(houseGoals())).join('\n')}${withMoney ? '\n' + GOALS_MONEY.map(say(houseMoney())).join('\n') : '\n- Budget and other money matters were left out of this brief by the owner.'}
+
+## Household
+
+${withHousehold ? `Who lives in the house, which bears on what matters most: access for someone who finds stairs or a bathtub hard, and how urgent damp, mould, radon or lead are for those most at risk.\n\n${HOUSEHOLD.map(say(houseHousehold())).join('\n')}` : 'Who lives in the house was left out of this brief by the owner. Ask if it bears on your advice, as it does for access, and for how urgent damp, mould, radon or lead are.'}
 
 ## Walkthrough checklist
 

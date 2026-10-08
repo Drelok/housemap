@@ -152,6 +152,7 @@ function normalizePlan(p) {
   p.facts ||= {};
   p.goals ||= {};
   p.checklist ||= {};
+  p.household ||= {};
   const exterior = p.floors.find((f) => f.kind === 'exterior') || p.floors.find((f) => /exterior|site/i.test(f.name));
   for (const f of p.floors) {
     f.id ||= uid();
