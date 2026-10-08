@@ -47,15 +47,89 @@ const polygon = (pts, fill, stroke = '#5b5f66', width = 1.4) => `<polygon points
 
 const WALL_TINT = [236, 232, 224];
 
-// A box standing on a floor: its sides, the farthest first, and its top. [{ depth, svg }]
-function boxParts(pts, z0, z1, fill, depth) {
+// Everything standing on a floor is a solid: an upright prism over a footprint in the plan (a box's
+// corners, or just the two ends of a wall), from z0 up to z1, with its picture in svg.
+
+// A box standing on a floor: its sides, the farthest first, and its top.
+function boxSolid(pts, z0, z1, fill) {
   const sides = pts.map((a, k) => {
     const b = pts[(k + 1) % pts.length];
     const [p, q] = outward({ points: pts }, a, b);
     return { d: nearness({ x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 }), svg: polygon([iso(p, z0), iso(q, z0), iso(q, z1), iso(p, z1)], wallShade(p, q, fill), '#6b7380', 0.8) };
   }).sort((m, n) => m.d - n.d);
   const top = polygon(pts.map((p) => iso(p, z1)), `rgb(${fill.join(',')})`, '#6b7380', 0.8);
-  return [{ depth, svg: sides.map((x) => x.svg).join('') + top }];
+  return { foot: pts, z0, z1, svg: sides.map((x) => x.svg).join('') + top };
+}
+
+// Across the picture, a footprint spans x − y from one side to the other.
+function across(pts) {
+  const u = pts.map((p) => p.x - p.y);
+  return [Math.min(...u), Math.max(...u)];
+}
+
+// How near the viewer a footprint reaches, nearest and farthest, along the line where x − y = u
+// (a line running straight away from the viewer), or null where it does not cross it.
+function chord(pts, u) {
+  const out = [];
+  pts.forEach((a, k) => {
+    const b = pts[(k + 1) % pts.length];
+    const ua = a.x - a.y;
+    const ub = b.x - b.y;
+    if ((ua - u) * (ub - u) > 0) return;
+    const t = ua === ub ? 0 : (u - ua) / (ub - ua);
+    out.push(nearness(a) + (nearness(b) - nearness(a)) * t);
+    if (ua === ub) out.push(nearness(b));
+  });
+  return out.length ? [Math.min(...out), Math.max(...out)] : null;
+}
+
+// Which of two solids is drawn first: -1 for a, 1 for b, 0 where they cannot overlap in the
+// picture. Along any line running away from the viewer the nearer footprint hides the farther one,
+// whatever their heights; where the footprints overlap, the lower solid is drawn first, and where
+// they share the same space (a sink set into a counter) the larger one is.
+function solidOrder(a, b) {
+  const [a0, a1] = across(a.foot);
+  const [b0, b1] = across(b.foot);
+  const lo = Math.max(a0, b0);
+  const hi = Math.min(a1, b1);
+  if (hi - lo < 0.01) return 0;
+  for (const t of [0.5, 0.15, 0.85]) {
+    const ca = chord(a.foot, lo + (hi - lo) * t);
+    const cb = chord(b.foot, lo + (hi - lo) * t);
+    if (!ca || !cb) continue;
+    if (ca[1] <= cb[0] + 0.02) return -1;
+    if (cb[1] <= ca[0] + 0.02) return 1;
+  }
+  if (a.z1 <= b.z0 + 0.01) return -1;
+  if (b.z1 <= a.z0 + 0.01) return 1;
+  return shapeArea({ points: b.foot }) - shapeArea({ points: a.foot }) || nearness(shapeCenter({ points: a.foot })) - nearness(shapeCenter({ points: b.foot }));
+}
+
+// The solids in the order to draw them, each after everything it stands in front of. Should three
+// ever hide each other in a ring, the farthest of those left goes next.
+function drawOrder(solids) {
+  const n = solids.length;
+  const after = solids.map(() => []);
+  const waits = new Array(n).fill(0);
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const o = solidOrder(solids[i], solids[j]);
+      if (o < 0) { after[i].push(j); waits[j]++; }
+      else if (o > 0) { after[j].push(i); waits[i]++; }
+    }
+  }
+  const far = solids.map((s) => nearness(shapeCenter({ points: s.foot })));
+  const done = new Array(n).fill(false);
+  const out = [];
+  while (out.length < n) {
+    let pick = -1;
+    for (let i = 0; i < n; i++) if (!done[i] && !waits[i] && (pick < 0 || far[i] < far[pick])) pick = i;
+    if (pick < 0) for (let i = 0; i < n; i++) if (!done[i] && (pick < 0 || far[i] < far[pick])) pick = i;
+    done[pick] = true;
+    out.push(solids[pick]);
+    for (const j of after[pick]) waits[j]--;
+  }
+  return out;
 }
 
 // The doors, open sides, half walls and windows along one wall of a room, as stretches of it:
@@ -75,35 +149,39 @@ function wallGaps(f, a, b) {
   return out.sort((m, n) => m.from - n.from);
 }
 
-// One wall of a room, cut away at CUT: whole where nothing is in it, missing at a door or an open
-// side, low at a half wall, and at a window cut to its sill, with the glass standing in the opening.
-function wallParts(f, r, a0, b0, z, lift) {
+// One wall of a room, cut away at CUT, as solids: whole where nothing is in it, missing at a door
+// or an open side, low at a half wall, and at a window cut to its sill, with the glass standing in
+// the opening.
+function wallSolids(f, r, a0, b0, z) {
   const [a, b] = outward(r, a0, b0);
   const len = Math.hypot(b.x - a.x, b.y - a.y);
   const at = (u) => ({ x: a.x + ((b.x - a.x) * u) / (len || 1), y: a.y + ((b.y - a.y) * u) / (len || 1) });
   const shade = wallShade(a, b, WALL_TINT);
-  const piece = (u0, u1, h0, h1, fill = shade, stroke = '#5b5f66', extra = '') => (u1 - u0 < 0.01 || h1 <= h0 ? ''
-    : `<polygon points="${[iso(at(u0), z + h0), iso(at(u1), z + h0), iso(at(u1), z + h1), iso(at(u0), z + h1)].map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="0.9" vector-effect="non-scaling-stroke"${extra}/>`);
-  let svg = '';
+  const out = [];
+  const piece = (u0, u1, h0, h1, fill = shade, stroke = '#5b5f66', extra = '') => {
+    if (u1 - u0 < 0.01 || h1 <= h0) return;
+    const ends = [at(u0), at(u1)];
+    out.push({ foot: ends, z0: z + h0, z1: z + h1, svg: `<polygon points="${[iso(ends[0], z + h0), iso(ends[1], z + h0), iso(ends[1], z + h1), iso(ends[0], z + h1)].map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="0.9" vector-effect="non-scaling-stroke"${extra}/>` });
+  };
   let u = 0;
   for (const g of wallGaps(f, a, b)) {
-    if (g.from > u) svg += piece(u, g.from, 0, CUT);
-    if (g.kind === 'half') svg += piece(g.from, g.to, 0, Math.min(CUT, 2.5), '#cfd5db');
+    if (g.from > u) piece(u, g.from, 0, CUT);
+    if (g.kind === 'half') piece(g.from, g.to, 0, Math.min(CUT, 2.5), '#cfd5db');
     else if (g.kind === 'window') {
       const sill = g.o.sill ?? windowKind(g.o.style).sill;
-      svg += piece(g.from, g.to, 0, Math.min(sill, CUT));
-      svg += piece(g.from, g.to, sill, sill + (WINDOW_HEIGHT[g.o.style] || 4), '#8fb3cf', '#3d6a8f', ' fill-opacity="0.55"');
+      piece(g.from, g.to, 0, Math.min(sill, CUT));
+      piece(g.from, g.to, sill, sill + (WINDOW_HEIGHT[g.o.style] || 4), '#8fb3cf', '#3d6a8f', ' fill-opacity="0.55"');
     }
     u = Math.max(u, g.to);
   }
-  if (u < len) svg += piece(u, len, 0, CUT);
-  return { depth: lift + 2 + nearness({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), svg };
+  if (u < len) piece(u, len, 0, CUT);
+  return out;
 }
 
 // Stairs going up rise as a flight of steps to the floor above; stairs going down lie flat.
-function stairsParts(it, z, lift) {
+function stairsSolids(it, z) {
   const parts = stairParts(it);
-  if (it.dir === 'down') return parts.map((p) => ({ depth: lift + 1, svg: polygon(p.quad.map((q) => iso(q, z + 0.05)), '#d9cbb3', '#7b8592', 0.75) }));
+  if (it.dir === 'down') return parts.map((p) => ({ foot: p.quad, z0: z, z1: z + 0.05, svg: polygon(p.quad.map((q) => iso(q, z + 0.05)), '#d9cbb3', '#7b8592', 0.75) }));
   const total = parts.reduce((n, p) => n + p.treads, 0) || 1;
   const rise = storey() / (total + 1);
   const out = [];
@@ -111,15 +189,14 @@ function stairsParts(it, z, lift) {
   for (const p of parts) {
     const [qa, qb, qc, qd] = p.quad;
     if (!p.treads) {
-      out.push(...boxParts(p.quad, z, z + rise * (k + 0.5), [217, 203, 179], lift + 2 + nearness(shapeCenter({ points: p.quad }))));
+      out.push(boxSolid(p.quad, z, z + rise * (k + 0.5), [217, 203, 179]));
       continue;
     }
     for (let n = 0; n < p.treads; n++) {
       const s0 = n / p.treads;
       const s1 = (n + 1) / p.treads;
-      const step = [between(qa, qb, s0), between(qa, qb, s1), between(qd, qc, s1), between(qd, qc, s0)];
       k++;
-      out.push(...boxParts(step, z, z + rise * k, [217, 203, 179], lift + 2 + nearness(shapeCenter({ points: step }))));
+      out.push(boxSolid([between(qa, qb, s0), between(qa, qb, s1), between(qd, qc, s1), between(qd, qc, s0)], z, z + rise * k, [217, 203, 179]));
     }
   }
   return out;
@@ -138,24 +215,31 @@ function floorsScene() {
   levels.forEach((f, n) => {
     const z = n * spread;
     const lift = n * 1e7;
+    // What is not counted as part of the house, such as a crawlspace, lies flat as a dashed
+    // outline with no walls, as on the outside view.
     for (const r of f.rooms) {
-      parts.push({ depth: lift, svg: polygon(outlinePoints(r).map((p) => iso(p, z)), r.separate ? '#ebe8e1' : '#f4efe4', '#8d877b') });
+      const pts = outlinePoints(r).map((p) => iso(p, z));
+      parts.push({ depth: lift, svg: r.separate
+        ? `<polygon points="${pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#eeebe4" stroke="#8d877b" stroke-width="1.2" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>`
+        : polygon(pts, '#f4efe4', '#8d877b') });
     }
+    const solids = [];
     for (const it of f.items) {
       if (isStairs(it)) {
-        parts.push(...stairsParts(it, z, lift));
+        solids.push(...stairsSolids(it, z));
         continue;
       }
       const h = itemHeights(it);
       if (!h) continue; // on the ceiling, or of no chosen type
-      parts.push(...boxParts(itemCorners(it), z + h[0], z + h[1], it.kind === 'upper' || it.kind === 'tall' || it.kind === 'shelves' || it.kind === 'counter' ? [222, 214, 200] : [213, 219, 226], lift + 2 + nearness(shapeCenter(it))));
+      solids.push(boxSolid(itemCorners(it), z + h[0], z + h[1], it.kind === 'upper' || it.kind === 'tall' || it.kind === 'shelves' || it.kind === 'counter' ? [222, 214, 200] : [213, 219, 226]));
     }
     for (const r of f.rooms) {
       const pts = outlinePoints(r);
-      pts.forEach((a, k) => parts.push(wallParts(f, r, a, pts[(k + 1) % pts.length], z, lift)));
-      const c = iso(shapeCenter(r), z + CUT + 0.5);
+      if (!r.separate) pts.forEach((a, k) => solids.push(...wallSolids(f, r, a, pts[(k + 1) % pts.length], z)));
+      const c = iso(shapeCenter(r), z + (r.separate ? 0.2 : CUT + 0.5));
       labels.push(`<text x="${c.x.toFixed(2)}" y="${c.y.toFixed(2)}" font-size="1.8" text-anchor="middle" fill="#222" stroke="#fff" stroke-width="0.45" paint-order="stroke" font-family="system-ui, sans-serif">${esc(roomTitle(r))}</text>`);
     }
+    drawOrder(solids).forEach((s, k) => parts.push({ depth: lift + 1 + k, svg: s.svg }));
     // The numbered issue pins on this floor, standing just above it.
     for (const i of plan.issues) {
       if (i.floorId !== f.id || !pinned(i) || i.status === 'Done') continue;
