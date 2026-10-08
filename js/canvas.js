@@ -377,11 +377,24 @@ function renderCanvas() {
       + measure.map((p) => `<circle class="start" cx="${p.x}" cy="${p.y}" r="${5 * u}"/>`).join('');
   }
 
+  // A sheet drawn for paper or for the export for AI shows which way north is, where it has been set.
+  if (printWidth && plan.north != null && plan.north !== '') s += northArrow(u);
+
   svg.innerHTML = s;
   renderPopover();
   renderReadout();
   placeUnderlay();
   renderTouchBar();
+}
+
+// An arrow in the top right corner pointing north, with an N beyond its tip.
+function northArrow(u) {
+  const c = { x: view.x + view.w - 46 * u, y: view.y + 46 * u };
+  const a = (+plan.north * Math.PI) / 180;
+  const n = { x: c.x + Math.sin(a) * 27 * u, y: c.y - Math.cos(a) * 27 * u };
+  const tip = `${c.x},${c.y - 18 * u} ${c.x + 8 * u},${c.y + 12 * u} ${c.x},${c.y + 6 * u} ${c.x - 8 * u},${c.y + 12 * u}`;
+  return `<g class="north"><circle cx="${c.x}" cy="${c.y}" r="${22 * u}"/><polygon points="${tip}" transform="rotate(${+plan.north} ${c.x} ${c.y})"/>`
+    + `<text x="${n.x}" y="${n.y + 5 * u}" font-size="${14 * u}" stroke-width="${4 * u}">N</text></g>`;
 }
 
 // Shows the whole sheet, or just the shapes given.

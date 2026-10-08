@@ -190,12 +190,12 @@ const issueShots = (i) => i.photoIds.map((id) => plan.photos.find((p) => p.id ==
 // the names the photos have in the export; without it they are listed by where they are filed.
 function issuesCsv(issues = plan.issues, photoNames = null) {
   const q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const rows = [['#', 'Floor', 'Room', 'Where', 'Title', 'Category', 'Status', 'My estimate low', 'My estimate high', 'Estimate from', 'Accepted quote', 'Must be done after', 'Description', ...ISSUE_MORE.map(([, label]) => label), 'Photo', 'Quotes']];
+  const rows = [['#', 'Floor', 'Room', 'Where', 'Title', 'Category', 'Status', 'My estimate low', 'My estimate high', 'Estimate from', 'Accepted quote', 'Added', 'Done on', 'Must be done after', 'Description', ...ISSUE_MORE.map(([, label]) => label), 'Photo', 'Quotes']];
   for (const i of issues) {
     const f = issueFloor(i);
     const photos = issueShots(i).map(({ shot }) => photoNames?.get(i.id + shot.id) || shot.file);
     rows.push([issueNum(i), issuePlace(i), issueRoom(i)?.name || '', pinned(i) ? spotWords(f, i) : '', i.title, cat(i.category).label, i.status, i.costLow, i.costHigh, ownEstimate(i).priced ? sourceWords(i) : '', issueCost(i).quoted ? issueCost(i).low : '',
-      afterOf(i).map(issueNum).join('; '), i.description, ...ISSUE_MORE.map((m) => moreAnswer(i, m)), [...photos, i.photo].filter(Boolean).join('; '), quotesOf(i).map(quoteLine).join('; ')]);
+      i.added || '', i.status === 'Done' ? i.doneOn || '' : '', afterOf(i).map(issueNum).join('; '), i.description, ...ISSUE_MORE.map((m) => moreAnswer(i, m)), [...photos, i.photo].filter(Boolean).join('; '), quotesOf(i).map(quoteLine).join('; ')]);
   }
   return rows.map((r) => r.map(q).join(',')).join('\r\n');
 }
@@ -237,7 +237,7 @@ function photoWords(ph, shot) {
   const f = plan.floors.find((x) => x.id === ph.floorId);
   const r = f?.rooms.find((x) => x.id === ph.roomId);
   const where = [f?.name, r ? roomTitle(r) : f?.kind === 'exterior' ? 'outside' : 'not in a room'].filter(Boolean).join(', ');
-  return `taken on ${where}, facing ${facingWord(shot.dir)}${ph.note ? `. Note: ${lines(ph.note)}` : ''}`;
+  return `taken on ${where}, facing ${facingWord(shot.dir)}${shot.taken ? `, on ${dateWords(shot.taken)}` : ''}${ph.note ? `. Note: ${lines(ph.note)}` : ''}`;
 }
 
 // Another issue, named in passing: "issue 27 (Roof inspection)", with "done" where it is.
@@ -253,7 +253,8 @@ function issueBlock(i, o) {
     `### Issue ${issueNum(i)}: ${i.title || 'Untitled'}`,
     '',
     `- **Category:** ${cat(i.category).label}`,
-    `- **Status:** ${i.status}`,
+    `- **Status:** ${i.status}${i.status === 'Done' && i.doneOn ? `, marked done on ${dateWords(i.doneOn)}` : ''}`,
+    ...(i.added ? [`- **Added to the list:** ${dateWords(i.added)}`] : []),
     ...(afterOf(i).length ? [`- **Must be done after:** ${afterOf(i).map(issueRef).join(', ')}`] : []),
     ...(waitingFor(i).length ? [`- **Waiting for this one:** ${waitingFor(i).map(issueRef).join(', ')}`] : []),
     `- **Where:** ${issueWhere(i)}`,
@@ -336,6 +337,7 @@ function houseWords() {
         size(r),
         f.kind === 'floor' && roomPart(f, r),
         r.level && `floor is ${levelText(r)}`,
+        f.kind === 'floor' && r.cover && `floor covering: ${FLOOR_COVERS.find(([v]) => v === r.cover)?.[1].toLowerCase() || r.cover}`,
         f.basement && (r.finished ? 'finished' : 'unfinished'),
         r.separate && 'separate structure, not part of the house',
         inside.length && `holds ${itemsWords(inside)}`,

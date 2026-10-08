@@ -66,7 +66,10 @@ const windowKind = (id) => WINDOW_KINDS.find((k) => k.id === id) || WINDOW_KINDS
 const EGRESS_SILL = 44 / 12; // the highest an egress window's sill may be, under the residential code
 // Where a basement door to the outside opens onto.
 const DOOR_ONTO = [['', 'Not said'], ['grade', 'Ground level: a walk-out'], ['stairwell', 'Steps up to the yard: an outside stairwell or bulkhead']];
-const INTERIOR_TOOLS = ['door', 'window', 'stairs', 'item']; // offered on the floors, not on the exterior sheet
+const INTERIOR_TOOLS = ['door', 'window', 'stairs', 'item'];
+// What a room's floor is covered with, kept in `cover`. The first of a room's details a contractor
+// or an AI asks for when pricing work in it.
+const FLOOR_COVERS = [['', 'Not said'], ['carpet', 'Carpet'], ['hardwood', 'Hardwood'], ['engineered', 'Engineered wood'], ['laminate', 'Laminate'], ['vinyl', 'Vinyl, plank or sheet'], ['tile', 'Ceramic or stone tile'], ['concrete', 'Bare concrete'], ['other', 'Something else']]; // offered on the floors, not on the exterior sheet
 const MAX_RISER = 7.75 / 12; // the tallest single step the current residential code (IRC) allows
 
 // The fixed questions asked about every issue, beyond its description: [key, question, kind].
@@ -287,7 +290,7 @@ const unpricedNote = (list) => (list.some(unpriced) ? ` · ${list.filter(unprice
 const issueNum = (i) => i.num;
 function newIssue(props) {
   plan.nextIssueNum ||= 1;
-  return { id: uid(), num: plan.nextIssueNum++, title: 'New issue', description: '', category: 'major', status: 'Open', costLow: null, costHigh: null, photo: '', photoIds: [], ...props };
+  return { id: uid(), num: plan.nextIssueNum++, title: 'New issue', description: '', category: 'major', status: 'Open', costLow: null, costHigh: null, photo: '', photoIds: [], added: dayStamp(), ...props };
 }
 // An issue need not have a pin. One about a whole floor has that floor and no place on it; one
 // about the whole house, such as the roof or the wiring, has no floor either.

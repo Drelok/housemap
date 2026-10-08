@@ -145,6 +145,24 @@ function householdHtml() {
     </div>`;
 }
 
+// On an issue's own form: the walkthrough line it is the issue for, which can be set from there as
+// well as from the House sheet. A line already linked to another issue says which.
+function issueCheckHtml(i) {
+  const mine = CHECKS.find(([key]) => houseChecks()[key]?.issueId === i.id)?.[0] || '';
+  const option = ([key, label]) => {
+    const other = checkIssue(key);
+    return `<option value="${key}"${key === mine ? ' selected' : ''}>${esc(label)}${other && other !== i ? ` (now issue #${issueNum(other)})` : ''}</option>`;
+  };
+  return `<label title="The line of the walkthrough checklist, on the House sheet, that this issue was found under. Choosing one marks that line Issue and links this issue to it; a line can have one issue linked.">Walkthrough checklist line<select id="issueCheck"><option value="">None</option>${CHECKS.map(option).join('')}</select></label>`;
+}
+
+function setIssueCheck(i, key) {
+  for (const [k] of CHECKS) if (houseChecks()[k]?.issueId === i.id) delete houseChecks()[k].issueId;
+  if (key) Object.assign((houseChecks()[key] ||= {}), { state: 'issue', issueId: i.id });
+  save();
+  renderAll();
+}
+
 // A list of the issues already made, to link one to a checklist line instead of adding another.
 function linkChoice(key) {
   if (!plan.issues.length) return '';

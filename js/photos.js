@@ -153,12 +153,16 @@ function addPhotos(files) {
       }
       await store.write(`${DIR_UNPROCESSED}/${copy.name}`, copy.data);
       have.add(copy.name.toLowerCase());
+      // When it was taken is read from the original, as the shrunk copy does not keep it.
+      const taken = await photoTaken(f);
+      if (taken) (plan.photoTaken ||= {})[copy.name] = taken;
       before += f.size;
       after += copy.data.size;
     }
   }).then(async () => {
     const added = images.length - skipped.length;
     importNote = !added ? '' : `Added ${added === 1 ? '1 photo' : `${added} photos`}: ${after < before ? `${megabytes(before)} shrunk to ${megabytes(after)}` : `${megabytes(after)}, kept at full size`}.`;
+    save();
     await refreshUnprocessed();
     if (!skipped.length) return;
     const names = skipped.slice(0, 15).join('\n') + (skipped.length > 15 ? `\n… and ${skipped.length - 15} more` : '');
@@ -195,6 +199,7 @@ function addMarker(x, y, dir) {
 async function returnFile(ph) {
   const name = await store.freeName(DIR_UNPROCESSED, stemOf(ph.original), extOf(ph.original));
   await store.move(ph.file, `${DIR_UNPROCESSED}/${name}`);
+  if (ph.taken) (plan.photoTaken ||= {})[name] = ph.taken;
   dropUrl(ph.file);
   await store.prune(dirOf(ph.file));
   await store.prune(dirOf(dirOf(ph.file)));
@@ -221,8 +226,11 @@ function attachPhoto(ph, name) {
     const file = `${to}/${await store.freeName(to, baseOf(to), extOf(name), true)}`;
     await store.move(`${DIR_UNPROCESSED}/${name}`, file);
     dropUrl(`${DIR_UNPROCESSED}/${name}`);
-    if (!ph.file) Object.assign(ph, { file, original: name });
-    else (ph.more ||= []).push({ id: uid(), dir: ph.dir, file, original: name });
+    // When it was taken goes with the photo onto the marker.
+    const taken = plan.photoTaken?.[name];
+    if (plan.photoTaken) delete plan.photoTaken[name];
+    if (!ph.file) Object.assign(ph, { file, original: name, ...(taken && { taken }) });
+    else (ph.more ||= []).push({ id: uid(), dir: ph.dir, file, original: name, ...(taken && { taken }) });
     // The new photo is the one shown, ready for its arrow to be turned.
     if (selPhoto() === ph) sel = { type: 'photo', id: ph.id, shot: shotsOf(ph).length - 1 };
   }).then(afterFileChange, photoError);
@@ -238,9 +246,11 @@ function detachPhoto(ph, shot = ph) {
     } else if (ph.more?.length) {
       // The next photo takes the first one's place.
       const next = ph.more.shift();
-      Object.assign(ph, { dir: next.dir, file: next.file, original: next.original });
+      Object.assign(ph, { dir: next.dir, file: next.file, original: next.original, taken: next.taken });
+      if (!ph.taken) delete ph.taken;
     } else {
       Object.assign(ph, { file: '', original: '' });
+      delete ph.taken;
     }
     if (ph.more && !ph.more.length) delete ph.more;
     if (selPhoto() === ph) sel = { type: 'photo', id: ph.id };
@@ -339,7 +349,7 @@ function photoInspector(ph) {
     </div>
     ${sel.adding ? `${picker}<div class="actions"><button id="btnAddHere">Add photos…</button><button id="btnTakeHere" class="camera">Take photo…</button></div>` : ''}
     ${details}
-    <p class="muted path">${esc(shot.file)}<br>Originally ${esc(shot.original)}</p>
+    <p class="muted path">${shot.taken ? `Taken ${esc(dateWords(shot.taken))}, ${esc(shot.taken.slice(11))}<br>` : ''}${esc(shot.file)}<br>Originally ${esc(shot.original)}</p>
     <div class="actions">
       <button class="danger" id="btnDelete" title="Removes the marker and puts ${many ? 'all its files' : 'its file'} back in photos/unprocessed">Delete marker</button>
     </div>`;

@@ -12,6 +12,60 @@ const narrowScreen = matchMedia('(max-width: 700px), (max-height: 500px)');
 const coarsePointer = matchMedia('(pointer: coarse)');
 const slug = (s, fallback) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || fallback;
 
+// ---------- dates ----------
+// Dates are kept as "2026-10-07", in the owner's own time, or "2026-10-07 14:30" with the time.
+const two = (n) => String(n).padStart(2, '0');
+const dayStamp = (d = new Date()) => `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
+const timeStamp = (d) => `${dayStamp(d)} ${two(d.getHours())}:${two(d.getMinutes())}`;
+// As people read it: "October 7, 2026".
+function dateWords(s) {
+  const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(s || '');
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+}
+
+// When a photo was taken. A camera writes that into the photo itself (the Exif DateTimeOriginal),
+// which shrinking the photo does not keep, so it is read from the original first. A photo without
+// it gets the date of the file, which for one just taken on a phone is the moment it was taken.
+async function photoTaken(file) {
+  try {
+    const b = new DataView(await file.slice(0, 256 * 1024).arrayBuffer());
+    if (b.getUint16(0) === 0xffd8) {
+      for (let p = 2; p + 10 < b.byteLength;) {
+        const marker = b.getUint16(p);
+        if ((marker & 0xff00) !== 0xff00) break;
+        if (marker === 0xffe1 && b.getUint32(p + 4) === 0x45786966) {
+          const when = exifDate(b, p + 10);
+          if (when) return when;
+        }
+        p += 2 + b.getUint16(p + 2);
+      }
+    }
+  } catch {
+    // Not a photo that can be read this way; the file's own date stands in.
+  }
+  return file.lastModified ? timeStamp(new Date(file.lastModified)) : '';
+}
+
+// The date a camera wrote into the Exif block that starts at byte `t`.
+function exifDate(b, t) {
+  const le = b.getUint16(t) === 0x4949;
+  const u16 = (o) => b.getUint16(t + o, le);
+  const u32 = (o) => b.getUint32(t + o, le);
+  const entry = (ifd, tag) => {
+    const n = u16(ifd);
+    for (let i = 0; i < n; i++) if (u16(ifd + 2 + i * 12) === tag) return ifd + 2 + i * 12;
+    return 0;
+  };
+  const ifd0 = u32(4);
+  const sub = entry(ifd0, 0x8769);
+  const e = (sub && entry(u32(sub + 8), 0x9003)) || entry(ifd0, 0x0132);
+  if (!e) return '';
+  let text = '';
+  for (let i = 0; i < 16; i++) text += String.fromCharCode(b.getUint8(t + u32(e + 8) + i));
+  const m = /^(\d{4}):(\d\d):(\d\d) (\d\d):(\d\d)/.exec(text);
+  return m && m[1] !== '0000' ? `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}` : '';
+}
+
 // ---------- feet and inches ----------
 // Lengths are stored as decimal feet. People measure, type and read them as feet and inches.
 

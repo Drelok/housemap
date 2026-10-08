@@ -126,7 +126,7 @@ function renderInspector() {
       <p class="note step" id="twinNote"${twinNote(r) ? '' : ' hidden'}>${esc(twinNote(r))}</p>
       ${size}
       <p class="muted">Area: <span id="area">${Math.round(shapeArea(r))}</span> sq ft</p>
-      ${f.kind === 'exterior' ? '' : partOfHtml(r) + levelHtml(r)}
+      ${f.kind === 'exterior' ? '' : partOfHtml(r) + levelHtml(r) + field('Floor covering', 'room', 'cover', r.cover || '', { options: FLOOR_COVERS })}
       <label class="check" title="A locked shape can still be selected and changed here in the side panel, but dragging on it moves the view instead of the shape, and it has no handles to catch by accident"><input type="checkbox" id="chkLocked"${r.locked ? ' checked' : ''}> Locked in place <kbd>L</kbd>: dragging on it moves the view, not the ${f.kind === 'exterior' ? 'shape' : 'room'}</label>
       ${f.basement ? `<label class="check" title="Finished, heated living space in a basement counts toward the Total House Area. Unfinished space, such as storage or a utility room, does not."><input type="checkbox" id="chkFinished"${r.finished ? ' checked' : ''}> Finished basement: counted in the Total House Area</label>` : ''}
       <label class="check" title="For a carport, shed, deck or anything else that is not part of the house itself"><input type="checkbox" id="chkSeparate"${r.separate ? ' checked' : ''}> Separate structure: not counted in the total, never combined</label>
@@ -142,6 +142,7 @@ function renderInspector() {
       ${f.kind === 'exterior' ? sizedHtml() : ''}`;
   } else if (i) {
     s = `<h2>Issue #${issueNum(i)}</h2>
+      ${i.added || i.doneOn ? `<p class="muted small">${[i.added && `Added ${dateWords(i.added)}`, i.status === 'Done' && i.doneOn && `done ${dateWords(i.doneOn)}`].filter(Boolean).join(', ')}</p>` : ''}
       ${field('Title', 'issue', 'title', i.title)}
       ${issueScopeHtml(i)}
       <div class="row">
@@ -149,6 +150,7 @@ function renderInspector() {
         ${field('Status', 'issue', 'status', i.status, { options: STATUSES.map((v) => [v, v]) })}
       </div>
       ${afterHtml(i)}
+      ${issueCheckHtml(i)}
       ${field('Description', 'issue', 'description', i.description, { area: true })}
       ${issueMoreHtml(i)}
       <label title="Your own rough idea of what this will cost, as a range. It is what the totals use until a quote is accepted.">My estimate</label>
@@ -243,6 +245,13 @@ $('#inspector').addEventListener('input', (e) => {
     // A step's height is typed as a plain length; which way it goes is kept in the sign of `level`.
     if (t.dataset.field === 'step') obj.level = feet * (obj.level < 0 ? -1 : 1);
     else obj[t.dataset.field] = feet;
+  } else if (t.dataset.obj === 'issue' && t.dataset.field === 'status') {
+    // The day it was marked Done is kept, and dropped if it is opened again.
+    obj.status = t.value;
+    if (t.value === 'Done') obj.doneOn = dayStamp();
+    else delete obj.doneOn;
+    save();
+    return renderAll();
   } else if (t.dataset.obj === 'opening' && t.dataset.field === 'style') {
     // A new kind of window starts at its usual width and sill height.
     const k = windowKind(t.value);
@@ -304,6 +313,7 @@ $('#inspector').addEventListener('change', (e) => {
     return renderInspector();
   }
   if (e.target.id === 'selLevel') return setLevelDir(selRoom(), e.target.value);
+  if (e.target.id === 'issueCheck') return setIssueCheck(selIssue(), e.target.value);
   if (e.target.id === 'afterAdd' && e.target.value) {
     const i = selIssue();
     i.after = [...(i.after || []), e.target.value];
@@ -467,7 +477,11 @@ function duplicateSelection() {
   copy.id = uid();
   delete copy.quotes; // a quote and its file belong to the one issue
   delete copy.locked;
-  if (i) copy.num = plan.nextIssueNum++; // a copy is an issue of its own, with its own number
+  if (i) {
+    copy.num = plan.nextIssueNum++; // a copy is an issue of its own, with its own number and date
+    copy.added = dayStamp();
+    if (copy.doneOn) copy.doneOn = dayStamp();
+  }
   const d = r ? 2 : it ? 1 : fine(16 * feetPerPx()); // an issue's pin moves clear of the one it was copied from
   // An issue without a pin has no place to be moved from.
   for (const p of copy.points || [copy]) if (p.x != null) Object.assign(p, { x: fine(p.x + d), y: fine(p.y + d) });
