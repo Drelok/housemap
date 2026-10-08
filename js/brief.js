@@ -297,7 +297,8 @@ function issueBlock(i, o) {
   if (shots.length || waiting) {
     out.push('- **Photos:**', ...shots.map(({ ph, shot }) => {
       const name = o.photoNames.get(i.id + shot.id);
-      return `  - ${name ? `\`${name}\`` : `(${baseOf(shot.file)}, left out: not a kind of picture that could be made smaller)`}: ${photoWords(ph, shot)}`;
+      const phase = i.status === 'Done' ? `${shotPhase(i, shot) === 'after' ? 'after' : 'before'} the work, ` : '';
+      return `  - ${name ? `\`${name}\`` : `(${baseOf(shot.file)}, left out: not a kind of picture that could be made smaller)`}: ${phase}${photoWords(ph, shot)}`;
     }));
     if (waiting) out.push(`  - ${waiting === 1 ? 'One more photo is' : `${waiting} more photos are`} planned for this issue but not taken yet.`);
   } else {

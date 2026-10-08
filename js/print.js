@@ -65,7 +65,8 @@ function reportHtml(issues, withPhotos) {
     .map(([c, g]) => `<tr><td><span class="dot" style="background:${c.color}"></span>${c.label}</td><td class="num">${g.length}</td><td class="num">${sum(g, 'costLow')}</td><td class="num">${sum(g, 'costHigh')}</td></tr>`).join('');
   const entry = (i) => {
     const room = issueRoom(i);
-    const shots = withPhotos ? i.photoIds.flatMap((id) => shotsOf(plan.photos.find((p) => p.id === id) || {})).filter((s) => s.file) : [];
+    // On an issue marked Done, the photos from before the work come first, each named as such.
+    const shots = withPhotos ? phasedShots(i) : [];
     const where = [issuePlace(i), room?.name, cat(i.category).label, i.status, issueCost(i).quoted ? `Accepted quote ${money(issueCost(i).low)}` : unpriced(i) ? 'Not priced' : `My estimate ${estimateText(i)}`].filter(Boolean);
     const more = ISSUE_MORE.filter(([key]) => i[key]).map(([key, label, kind]) => `${label} ${Array.isArray(kind) ? kind.find(([v]) => v === i[key])?.[1] || i[key] : i[key]}`);
     const quote = (q) => [quoteLine(q), q.number && '#' + q.number, q.date, q.phone, q.email].filter(Boolean).map(esc).join(' · ');
@@ -78,7 +79,7 @@ function reportHtml(issues, withPhotos) {
       ${more.map((m) => `<p class="desc">${esc(m)}</p>`).join('')}
       ${i.photo ? `<p class="desc">Photo note: ${esc(i.photo)}</p>` : ''}
       ${quotesOf(i).map((q) => `<p class="desc">Quote from ${quote(q)}</p>`).join('')}
-      ${shots.length ? `<div class="shots">${shots.map((s) => `<figure><img data-print-photo="${esc(s.file)}" alt=""><figcaption>${esc(baseOf(s.file))}</figcaption></figure>`).join('')}</div>` : ''}
+      ${shots.length ? `<div class="shots">${shots.map(({ shot, phase }) => `<figure><img data-print-photo="${esc(shot.file)}" alt=""><figcaption>${phase ? `<b>${phase === 'after' ? 'After' : 'Before'}</b> · ` : ''}${esc(baseOf(shot.file))}</figcaption></figure>`).join('')}</div>` : ''}
     </article>`;
   };
   return `<section class="printPage report">
