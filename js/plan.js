@@ -157,7 +157,7 @@ function scalePlan(p, k, tidy = (v) => v) {
     }
     for (const o of f.openings || []) at(o, ['x', 'y', 'w', 't', 'sill']);
     for (const it of f.items || []) {
-      at(it, ['x', 'y', 'w', 'h']);
+      at(it, ['x', 'y', 'w', 'h', 'bottom', 'top']);
       for (const pt of it.points || []) at(pt, ['x', 'y']);
     }
   }

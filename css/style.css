@@ -82,6 +82,17 @@ header, #tabs, #guide, #aerial { user-select: none; }
 .plan .north polygon { fill: #24476b; }
 .plan .north text { fill: #24476b; font-weight: 700; stroke: #fff; paint-order: stroke; }
 #inspector textarea[data-field=aiNotes] { min-height: 130px; }
+#view3dDialog { max-width: 1000px; width: calc(100vw - 32px); }
+#view3dBody { padding-top: 0; }
+#view3dShow { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0; font-size: 13px; }
+#view3dDialog #view3dShow label.check { margin: 0; font-size: 13px; }
+.v3dBar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 4px; }
+.v3dBar h3 { margin: 0; font-size: 13px; color: #24476b; }
+.v3dTools { display: flex; align-items: center; gap: 4px; }
+.v3dTools button { min-width: 34px; padding: 4px 8px; font-size: 16px; line-height: 1; }
+.v3dZoom { min-width: 44px; text-align: center; font-size: 12px; color: #555; }
+.v3dPane { max-height: 60vh; overflow: auto; border: 1px solid #ddd; border-radius: 4px; cursor: grab; }
+.v3dPane svg { display: block; max-width: none; height: auto; margin: 0 auto; }
 #houseBody .maintenance { margin-top: 18px; max-width: 900px; }
 #houseBody .maintenance h2 .muted { margin-left: auto; font-weight: 400; }
 .maintRow { display: grid; grid-template-columns: minmax(200px, 1.6fr) 150px 150px minmax(130px, 1fr) auto; gap: 4px 10px; align-items: end; padding: 8px 0; border-bottom: 1px solid #e4e4e4; }
@@ -93,14 +104,13 @@ header, #tabs, #guide, #aerial { user-select: none; }
 .maintRow .maintButtons { display: flex; gap: 4px; }
 .maintRow .maintNote { grid-column: 1 / -1; font-size: 13px; }
 #maintDialog { max-width: 560px; }
-#maintList { max-height: 55vh; overflow: auto; }
 #maintList label.check { margin: 0 0 6px; align-items: flex-start; font-size: 13px; }
 @media (max-width: 700px), (max-height: 500px) {
   .maintRow { grid-template-columns: 1fr 1fr; }
   .maintRow > input:first-child { grid-column: 1 / -1; }
 }
 #reviewDialog { max-width: 720px; width: calc(100vw - 32px); }
-#reviewList { max-height: 55vh; overflow: auto; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 4px 0; }
+#reviewList { border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 4px 0; }
 #reviewList h3 { margin: 12px 0 4px; font-size: 13px; color: #24476b; }
 #reviewList label.reviewRow { align-items: flex-start; margin: 0 0 6px; font-size: 13px; color: #222; }
 #reviewList label.reviewRow input { margin-top: 2px; flex: none; }
@@ -272,14 +282,23 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 #askText { margin: 0; white-space: pre-line; }
 #askInput { display: block; width: 100%; font: inherit; padding: 5px 6px; border: 1px solid #bbb; border-radius: 4px; margin-top: 12px; }
 #btnHelp { width: 30px; padding: 5px 0; justify-content: center; border-radius: 50%; font-weight: 700; color: #24476b; border-color: #24476b; }
-#tipsDialog { max-width: 620px; padding: 0; overflow: hidden; }
-/* The title and close button stay put; only the tips themselves scroll. */
-#tipsDialog[open], #tipsDialog form { display: flex; flex-direction: column; min-height: 0; }
-#tipsHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px 12px 20px; border-bottom: 1px solid #ddd; }
-#tipsHead h2 { margin: 0; font-size: 16px; }
-#tipsClose { flex: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border-radius: 50%; color: #24476b; border-color: #24476b; }
-#tipsClose:hover { background: #24476b; color: #fff; }
-#tipsBody { padding: 16px 20px 20px; overflow: auto; min-height: 0; }
+/* Every window that pops up is laid out the same way: a top bar with its title and a round close
+   button, and anything that sets what it shows, that stays put; the content, which scrolls under
+   it; and, where it asks for an answer, a bottom bar with its buttons, which also stays put. */
+dialog.win { padding: 0; overflow: hidden; }
+dialog.win[open], dialog.win > form { display: flex; flex-direction: column; min-height: 0; max-height: calc(100dvh - 32px); }
+.winHead { flex: none; padding: 14px 16px 12px 20px; border-bottom: 1px solid #ddd; }
+.winHead > p { margin: 6px 0 0; }
+.winTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.winTop h2 { margin: 0; font-size: 16px; }
+.winBody { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 12px 20px 16px; }
+.winBody > :first-child { margin-top: 0; }
+.winBody > :last-child { margin-bottom: 0; }
+.winFoot { flex: none; margin: 0; padding: 12px 20px; border-top: 1px solid #ddd; }
+#tipsDialog { max-width: 620px; }
+.roundClose { flex: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border-radius: 50%; color: #24476b; border-color: #24476b; }
+.roundClose:hover { background: #24476b; color: #fff; }
+#tipsBody { padding: 16px 20px 20px; }
 #tipsBody .lead { margin: 0 0 12px; padding: 8px 10px; background: #eef3f8; border-radius: 5px; }
 #tipsBody .caution { margin: 12px 0 0; padding: 8px 10px; background: #fff8e1; border: 1px solid #e0a800; border-radius: 5px; }
 #tipsBody ol { margin: 0; padding-left: 20px; }
@@ -480,7 +499,10 @@ button.camera { display: none; }
   #popover img { max-height: 18vh; }
   dialog { max-width: calc(100vw - 16px); padding: 16px; }
   #tipsDialog { max-width: calc(100vw - 16px); }
-  #tipsBody { padding: 12px 16px 16px; }
+  .winHead { padding: 12px 12px 10px 16px; }
+  .winBody, #tipsBody { padding: 12px 16px 16px; }
+  #view3dBody { padding-top: 0; }
+  .winFoot { padding: 10px 16px; }
   #tipsBody table.keys td:first-child { white-space: normal; width: auto; }
   #landing { padding: 12px; align-items: flex-start; }
   .card { padding: 16px; }
