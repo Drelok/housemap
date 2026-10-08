@@ -236,7 +236,7 @@ photos/processed/         placed photos, by floor and room</pre>
   <form method="dialog">
     <div id="tipsHead">
       <h2 id="tipsTitle"></h2>
-      <button id="tipsClose" title="Close" aria-label="Close">
+      <button id="tipsClose" class="roundClose" title="Close" aria-label="Close">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
@@ -305,11 +305,17 @@ photos/processed/         placed photos, by floor and room</pre>
 
 <dialog id="view3dDialog">
   <form method="dialog">
-    <h2>3D view</h2>
-    <p class="muted">Drawn from the plan, at the ceiling height in <i>House standards</i>. The roof is not drawn, so the tops are flat. The export for AI holds the same pictures, from the first angle and with everything shown.</p>
-    <div id="view3dShow"></div>
+    <div id="view3dHead">
+      <div class="v3dTop">
+        <h2>3D view</h2>
+        <button id="view3dClose" class="roundClose" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <p class="muted">Drawn from the plan, at the ceiling height in <i>House standards</i>. The roof is not drawn, so the tops are flat. The export for AI holds the same pictures, from the first angle and with everything shown.</p>
+      <div id="view3dShow"></div>
+    </div>
     <div id="view3dBody"></div>
-    <div class="actions"><button class="primary" value="ok">Close</button></div>
   </form>
 </dialog>
 
