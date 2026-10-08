@@ -232,25 +232,36 @@ photos/processed/         placed photos, by floor and room</pre>
   </nav>
 </div>
 
-<dialog id="tipsDialog">
+<dialog id="tipsDialog" class="win">
   <form method="dialog">
-    <div id="tipsHead">
-      <h2 id="tipsTitle"></h2>
-      <button id="tipsClose" class="roundClose" title="Close" aria-label="Close">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
+    <div class="winHead">
+      <div class="winTop">
+        <h2 id="tipsTitle"></h2>
+        <button type="button" id="tipsClose" class="roundClose" data-close="cancel" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
     </div>
-    <div id="tipsBody"></div>
+    <div id="tipsBody" class="winBody"></div>
   </form>
 </dialog>
 
-<dialog id="standardsDialog">
+<dialog id="standardsDialog" class="win">
   <form method="dialog">
-    <h2>House standards</h2>
-    <p class="muted">Rooms are drawn as the clear space inside them, so the app needs to know how thick the walls between them are and how wide the doors usually are. The suggested values are filled in; change any that differ in this house.</p>
-    <div id="standardsBody"></div>
-    <p class="muted small">Round to the nearest 1/4 inch. Fractions are fine: 4 1/2. These are starting points: any one wall or door can be given its own size, and changing them later only affects what you draw afterwards.</p>
-    <div class="actions">
+    <div class="winHead">
+      <div class="winTop">
+        <h2>House standards</h2>
+        <button type="button" id="standardsClose" class="roundClose" data-close="cancel" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="winBody">
+      <p class="muted">Rooms are drawn as the clear space inside them, so the app needs to know how thick the walls between them are and how wide the doors usually are. The suggested values are filled in; change any that differ in this house.</p>
+      <div id="standardsBody"></div>
+      <p class="muted small">Round to the nearest 1/4 inch. Fractions are fine: 4 1/2. These are starting points: any one wall or door can be given its own size, and changing them later only affects what you draw afterwards.</p>
+    </div>
+    <div class="actions winFoot">
       <button type="button" id="btnStandardsTypical" title="Puts the suggested value back in every box">Use typical values</button>
       <button type="button" id="standardsCancel" data-close="cancel">Cancel</button>
       <button class="primary" value="ok">Use these</button>
@@ -258,90 +269,126 @@ photos/processed/         placed photos, by floor and room</pre>
   </form>
 </dialog>
 
-<dialog id="printDialog">
+<dialog id="printDialog" class="win">
   <form method="dialog">
-    <h2>Print or save as PDF</h2>
-    <p class="muted">Choose what to include. The browser's print window opens next. To get a PDF file, choose “Save as PDF” as the printer there.</p>
-    <label>Floor plans, one to a page
-      <select id="printSheets">
-        <option value="this">This sheet only</option>
-        <option value="all">Every sheet that has something drawn on it</option>
-        <option value="none">None</option>
-      </select>
-    </label>
-    <label class="check"><input type="checkbox" id="printMarkers"> Show photo markers on the plans</label>
-    <label class="check"><input type="checkbox" id="printIssues" checked> Issue report: each issue with its place, cost range and description</label>
-    <label class="check"><input type="checkbox" id="printPhotos" checked> Include the photos linked to each issue</label>
-    <label class="check"><input type="checkbox" id="printOpenOnly"> Leave out issues marked Done</label>
-    <p class="muted small">The exterior sheet prints the whole lot; each floor is fitted to its own rooms so the house fills the page. Anything turned off in the View menu is left out, and the numbered pins match the numbers in the report. The aerial picture is not printed.</p>
-    <div class="actions">
+    <div class="winHead">
+      <div class="winTop">
+        <h2>Print or save as PDF</h2>
+        <button type="button" class="roundClose" data-close="cancel" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="winBody">
+      <p class="muted">Choose what to include. The browser's print window opens next. To get a PDF file, choose “Save as PDF” as the printer there.</p>
+      <label>Floor plans, one to a page
+        <select id="printSheets">
+          <option value="this">This sheet only</option>
+          <option value="all">Every sheet that has something drawn on it</option>
+          <option value="none">None</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="printMarkers"> Show photo markers on the plans</label>
+      <label class="check"><input type="checkbox" id="printIssues" checked> Issue report: each issue with its place, cost range and description</label>
+      <label class="check"><input type="checkbox" id="printPhotos" checked> Include the photos linked to each issue</label>
+      <label class="check"><input type="checkbox" id="printOpenOnly"> Leave out issues marked Done</label>
+      <p class="muted small">The exterior sheet prints the whole lot; each floor is fitted to its own rooms so the house fills the page. Anything turned off in the View menu is left out, and the numbered pins match the numbers in the report. The aerial picture is not printed.</p>
+    </div>
+    <div class="actions winFoot">
       <button type="button" data-close="cancel">Cancel</button>
       <button class="primary" value="ok">Print…</button>
     </div>
   </form>
 </dialog>
 
-<dialog id="aiDialog">
+<dialog id="aiDialog" class="win">
   <form method="dialog">
-    <h2>Export for AI</h2>
-    <p class="muted">Makes one zip file to give to an AI assistant, such as Claude or ChatGPT, so it can look over the house with you. It holds a brief in plain words, <i>README-FIRST.md</i>, that gives the house facts, your goals and the walkthrough checklist, and says where each issue is and what is above and below it; a small copy of each issue's photos; a picture of each floor; and the issue list as a table. The brief opens with a request you can paste in.</p>
-    <label class="check"><input type="checkbox" id="aiPlans" checked> A picture of each sheet, with the numbered issue pins</label>
-    <label class="check"><input type="checkbox" id="aiSpots" checked> A close-up of the plan around each issue that has no photos, so its place can be seen</label>
-    <label class="check"><input type="checkbox" id="aiStyles"> Ask for style ideas: a few exterior and interior styles that would suit this layout, with example pictures if the assistant can make them</label>
-    <label class="check"><input type="checkbox" id="aiAerial" checked> The aerial picture of the lot, if one has been added: it shows the yard, driveway, streets and neighbours that are not drawn</label>
-    <label class="check"><input type="checkbox" id="aiDone"> Include issues marked Done</label>
-    <label class="check"><input type="checkbox" id="aiOther"> Include photos that are not linked to an issue</label>
-    <label class="check"><input type="checkbox" id="aiQuoteFiles"> Include the quote files (PDFs and scans) attached to issues</label>
-    <label class="check"><input type="checkbox" id="aiContacts"> Include contractors' contact details: person, phone, email, address, license number</label>
-    <label class="check"><input type="checkbox" id="aiMoney"> Include my budget and money matters, from Goals and limits</label>
-    <label class="check"><input type="checkbox" id="aiHousehold"> Include who lives in the house, from Household: ages, mobility, health and pets</label>
-    <p class="muted small">Nothing is sent anywhere by this app: the zip is saved to this computer, and you choose what to do with it. Company names and amounts on quotes are always in the brief. The house address is in it too, if one is filled in.</p>
-    <div class="actions">
+    <div class="winHead">
+      <div class="winTop">
+        <h2>Export for AI</h2>
+        <button type="button" class="roundClose" data-close="cancel" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="winBody">
+      <p class="muted">Makes one zip file to give to an AI assistant, such as Claude or ChatGPT, so it can look over the house with you. It holds a brief in plain words, <i>README-FIRST.md</i>, that gives the house facts, your goals and the walkthrough checklist, and says where each issue is and what is above and below it; a small copy of each issue's photos; a picture of each floor; and the issue list as a table. The brief opens with a request you can paste in.</p>
+      <label class="check"><input type="checkbox" id="aiPlans" checked> A picture of each sheet, with the numbered issue pins</label>
+      <label class="check"><input type="checkbox" id="aiSpots" checked> A close-up of the plan around each issue that has no photos, so its place can be seen</label>
+      <label class="check"><input type="checkbox" id="aiStyles"> Ask for style ideas: a few exterior and interior styles that would suit this layout, with example pictures if the assistant can make them</label>
+      <label class="check"><input type="checkbox" id="aiAerial" checked> The aerial picture of the lot, if one has been added: it shows the yard, driveway, streets and neighbours that are not drawn</label>
+      <label class="check"><input type="checkbox" id="aiDone"> Include issues marked Done</label>
+      <label class="check"><input type="checkbox" id="aiOther"> Include photos that are not linked to an issue</label>
+      <label class="check"><input type="checkbox" id="aiQuoteFiles"> Include the quote files (PDFs and scans) attached to issues</label>
+      <label class="check"><input type="checkbox" id="aiContacts"> Include contractors' contact details: person, phone, email, address, license number</label>
+      <label class="check"><input type="checkbox" id="aiMoney"> Include my budget and money matters, from Goals and limits</label>
+      <label class="check"><input type="checkbox" id="aiHousehold"> Include who lives in the house, from Household: ages, mobility, health and pets</label>
+      <p class="muted small">Nothing is sent anywhere by this app: the zip is saved to this computer, and you choose what to do with it. Company names and amounts on quotes are always in the brief. The house address is in it too, if one is filled in.</p>
+    </div>
+    <div class="actions winFoot">
       <button type="button" data-close="cancel">Cancel</button>
       <button class="primary" value="ok">Export</button>
     </div>
   </form>
 </dialog>
 
-<dialog id="view3dDialog">
+<dialog id="view3dDialog" class="win">
   <form method="dialog">
-    <div id="view3dHead">
-      <div class="v3dTop">
+    <div class="winHead">
+      <div class="winTop">
         <h2>3D view</h2>
-        <button id="view3dClose" class="roundClose" title="Close" aria-label="Close">
+        <button type="button" class="roundClose" data-close="cancel" title="Close" aria-label="Close">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
       </div>
       <p class="muted">Drawn from the plan, at the ceiling height in <i>House standards</i>. The roof is not drawn, so the tops are flat. The export for AI holds the same pictures, from the first angle and with everything shown.</p>
       <div id="view3dShow"></div>
     </div>
-    <div id="view3dBody"></div>
+    <div id="view3dBody" class="winBody"></div>
   </form>
 </dialog>
 
-<dialog id="maintDialog">
+<dialog id="maintDialog" class="win">
   <form method="dialog">
-    <h2>Common maintenance jobs</h2>
-    <p class="muted">Tick the ones this house needs. Each starts as not done yet; mark it done when it is, and change how often it is done if this house needs it more or less.</p>
-    <div id="maintList"></div>
-    <div class="actions">
+    <div class="winHead">
+      <div class="winTop">
+        <h2>Common maintenance jobs</h2>
+        <button type="button" class="roundClose" data-close="cancel" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="winBody">
+      <p class="muted">Tick the ones this house needs. Each starts as not done yet; mark it done when it is, and change how often it is done if this house needs it more or less.</p>
+      <div id="maintList"></div>
+    </div>
+    <div class="actions winFoot">
       <button type="button" data-close="cancel">Cancel</button>
       <button class="primary" value="ok">Add what is ticked</button>
     </div>
   </form>
 </dialog>
 
-<dialog id="reviewDialog">
+<dialog id="reviewDialog" class="win">
   <form method="dialog">
-    <h2>AI review</h2>
-    <p class="muted" id="reviewIntro"></p>
-    <p class="muted small" id="reviewMissing" hidden></p>
-    <div class="actions">
-      <button type="button" id="btnReviewAll">Tick all</button>
-      <button type="button" id="btnReviewNone">Untick all</button>
+    <div class="winHead">
+      <div class="winTop">
+        <h2>AI review</h2>
+        <button type="button" class="roundClose" data-close="cancel" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
     </div>
-    <div id="reviewList"></div>
-    <div class="actions">
+    <div class="winBody">
+      <p class="muted" id="reviewIntro"></p>
+      <p class="muted small" id="reviewMissing" hidden></p>
+      <div class="actions">
+        <button type="button" id="btnReviewAll">Tick all</button>
+        <button type="button" id="btnReviewNone">Untick all</button>
+      </div>
+      <div id="reviewList"></div>
+    </div>
+    <div class="actions winFoot">
       <button type="button" data-close="cancel">Cancel</button>
       <button class="primary" value="ok" id="btnReviewApply">Apply what is ticked</button>
     </div>
@@ -367,12 +414,21 @@ photos/processed/         placed photos, by floor and room</pre>
   </form>
 </dialog>
 
-<dialog id="deleteDialog">
+<dialog id="deleteDialog" class="win">
   <form method="dialog">
-    <h2 id="deleteTitle"></h2>
-    <div id="deleteBody"></div>
-    <label class="check"><input type="checkbox" id="deleteSure"> I understand these files will be permanently deleted</label>
-    <div class="actions">
+    <div class="winHead">
+      <div class="winTop">
+        <h2 id="deleteTitle"></h2>
+        <button type="button" class="roundClose" data-close="cancel" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="winBody">
+      <div id="deleteBody"></div>
+      <label class="check"><input type="checkbox" id="deleteSure"> I understand these files will be permanently deleted</label>
+    </div>
+    <div class="actions winFoot">
       <button value="cancel">Cancel</button>
       <button class="danger solid" id="btnDeleteProject" value="delete" disabled>Delete project</button>
     </div>

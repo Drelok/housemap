@@ -18,6 +18,7 @@ function openStandards() {
       <p class="muted small">Typical: ${fmtShort(s.typical)}. ${s.note}</p>`;
   }).join('');
   $('#standardsCancel').hidden = !plan.standards;
+  $('#standardsClose').hidden = !plan.standards;
   $('#standardsDialog').returnValue = '';
   $('#standardsDialog').showModal();
 }
