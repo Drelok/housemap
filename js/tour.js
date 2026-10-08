@@ -249,11 +249,20 @@ const TOUR = [
     },
   },
   {
-    title: 'Keeping a copy and sharing',
-    text: '<b>Export project (.zip)</b> saves everything, photos included, as one file: keep it as a backup, or start a new project from it on another device. <b>Export for AI</b> makes a zip an AI assistant can read, and <b>Import AI review</b> brings its advice back in.',
+    title: 'Keeping a copy, and other devices',
+    text: '<b>Export project (.zip)</b> saves the whole project as one file: the plan, every photo, the aerial picture and the quote files. Keep it somewhere safe as a backup. A project kept in the browser, as on a phone or tablet, is lost if the browser’s site data is cleared, so the File button turns yellow when it has gone two weeks without one.<br><br>To carry a project to another device, choose <b>New project</b> there and pick the zip under <i>Start from an exported project</i>; everything comes across. From the website, the app can be installed (<i>Install</i> in Chrome or Edge, <i>Add to Home Screen</i> on an iPhone or iPad) so it opens in its own window and works with no connection.',
     at: '#btnExportAll',
     go() {
       tourMenu('#btnExportAll');
+    },
+  },
+  {
+    title: 'Asking an AI about your house',
+    text: '<b>Export for AI (.zip)</b> packs the house for an AI assistant you already use, such as Claude or ChatGPT: a brief in plain words, a picture of each floor with the issue pins, the issue photos and the issue list. It is a second opinion worth having before you call anyone: what matters most, what it is likely to cost, what has to be done first, and what you may have missed. The app sends nothing anywhere; you upload the files yourself, and your budget and household are left out unless you tick them.<br><br>Unzip it, upload the files, and paste the request at the top of <i>README-FIRST.md</i>. Then ask things like:<ul><li>Do an issue and cost analysis: rank the issues by safety and urgency, with a likely cost range for each where I live.</li><li>Which should be done first, and which have to wait for others?</li><li>What could be causing the damp patch, and what can I check myself before calling someone?</li><li>How do the three roof quotes compare, and what should I ask the roofers?</li><li>What have I missed? Which facts or checklist lines should I look into?</li></ul>Ask it to send back <i>house-map-review.md</i>, as the brief explains. <b>Import AI review</b> then lists each suggestion with a tick box, and nothing changes until you apply what you ticked. Treat its figures as estimates, and have a professional look at anything about safety or the structure.',
+    tryIt: 'Open Export for AI to see what can go in.',
+    at: '#btnAi',
+    go() {
+      tourMenu('#btnAi');
     },
   },
   {
@@ -291,6 +300,7 @@ function tourShow(n) {
   $('#tourText').innerHTML = step.text;
   $('#tourTry').innerHTML = step.tryIt ? `<b>Try it:</b> ${step.tryIt}` : '';
   $('#tourTry').hidden = !step.tryIt;
+  $('#tourCard .tourBody').scrollTop = 0;
   $('#tourBack').disabled = n === 0;
   $('#tourNext').textContent = n === TOUR.length - 1 ? 'Finish' : 'Next';
   // The plan is fitted round the card once the card has its words, and so its size.
