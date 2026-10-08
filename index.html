@@ -25,6 +25,7 @@
         <button id="btnStartNew" class="primary">New project</button>
         <button id="btnOpenFolder">Open project folder…</button>
       </div>
+      <p class="tutorialLine"><button type="button" id="btnTutorial" title="A made-up house, drawn and filled in, with a guided tour of what the app does. It is kept in this browser as a project of its own.">Open the tutorial house</button> <span class="muted small">A finished example with a guided tour.</span></p>
       <p class="muted" id="storageNote" hidden>This browser cannot work in a folder on disk, so projects are kept inside the browser, on this device only. Clearing the browser's site data deletes them: use <i>File</i> → <i>Export project (.zip)</i> to keep a copy, or to move a project to another device. Chrome or Edge on a computer keeps the plan and photos in a normal folder.</p>
       <p class="muted">Each project is one folder:</p>
       <pre>plan.housemap.json        the plan
@@ -126,6 +127,10 @@ photos/processed/         placed photos, by floor and room</pre>
         <span class="menuList" hidden>
           <button id="btnTips" title="Show the getting-started tips for this sheet">Tips for this sheet</button>
           <button id="btnKeys" title="Every shortcut key in one list">Keyboard shortcuts <kbd>?</kbd></button>
+          <button id="btnAiGuide" title="Why and how to have an AI assistant look over the house, with things to ask it">Asking an AI about your house</button>
+          <hr id="tutorialRule" hidden>
+          <button id="btnTour" hidden title="The guided tour of the tutorial house, from the start">Take the tour</button>
+          <button id="btnTutorialReset" hidden title="Undo every change made to the tutorial house, and put it back as it came">Start the tutorial over…</button>
           <hr>
           <button id="btnAbout">About</button>
         </span>
@@ -447,6 +452,24 @@ photos/processed/         placed photos, by floor and room</pre>
     </div>
   </form>
 </dialog>
+
+<div id="tourCard" hidden role="region" aria-label="Guided tour">
+  <div class="tourTop">
+    <span id="tourStep" class="muted small"></span>
+    <button type="button" id="tourClose" class="roundClose" title="End the tour" aria-label="End the tour">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="tourBody">
+    <h2 id="tourTitle"></h2>
+    <p id="tourText"></p>
+    <p id="tourTry" class="note"></p>
+  </div>
+  <div class="actions">
+    <button type="button" id="tourBack">Back</button>
+    <button type="button" id="tourNext" class="primary">Next</button>
+  </div>
+</div>
 
 <div id="popover" hidden></div>
 <div id="printArea"></div>

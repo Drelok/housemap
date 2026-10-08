@@ -60,3 +60,41 @@ function showTips(kind, again = false) {
 }
 
 $('#btnTips').addEventListener('click', () => showTips(floor().kind, true));
+
+// ---------- asking an AI about the house ----------
+// A guide to the export for AI, in the ? menu of every project: why it is worth doing, how to give
+// it to an assistant, what to ask, and how its advice comes back into the plan.
+
+const AI_GUIDE = {
+  title: 'Asking an AI about your house',
+  html: `<p class="lead"><b>An AI assistant can give you a second opinion on the whole house in a few minutes.</b> With the plan, the photos and every issue in front of it, it can say what matters most, what each repair is likely to cost, what has to be done before what, and what you may have missed. It is worth doing before you call anyone, and again whenever the list changes.</p>
+    <ol>
+      <li><b>Fill in what you can first.</b> The more the plan holds, the better the answer: issues pinned where they are, with photos, a description and when they started; the house facts and the walkthrough checklist on the House tab; and your goals, such as how long you are staying and what you can do yourself.</li>
+      <li><b>Export it.</b> <i>File</i> → <i>Export for AI (.zip)…</i> saves one zip to this device. It holds <i>README-FIRST.md</i>, a brief in plain words that says where each issue is and what is above and below it; a picture of each floor with the numbered pins, and the house in 3D; small copies of the issue photos; and the issues as a spreadsheet. Your budget, who lives in the house and contractors' contact details are left out unless you tick them.</li>
+      <li><b>Give it to an assistant you already use</b>, such as Claude or ChatGPT. Unzip it and upload the files, or the whole folder. The app sends nothing anywhere itself.</li>
+      <li><b>Paste the request at the top of the brief.</b> It asks for a full review: each issue's likely cause, cost and urgency, the order to do the work in, and anything missing. Then keep asking, as you would a knowledgeable friend.</li>
+      <li><b>Bring its advice back.</b> Ask it to send its answer as <i>house-map-review.md</i>, as the end of the brief explains. <i>File</i> → <i>Import AI review…</i> lists each suggestion (a cost estimate, a category, the order of work, new issues, house facts) with a tick box. Nothing changes until you apply what you ticked, and one Undo takes it all back.</li>
+    </ol>
+    <p><b>Things to ask</b></p>
+    <ul>
+      <li><b>Costs:</b> Do an issue and cost analysis: rank the issues by safety and urgency, with a likely cost range for each where I live. Which could I do myself, and what would that save?</li>
+      <li><b>Order:</b> Which should be done first, and which have to wait for others? What could be done in one visit by the same trade?</li>
+      <li><b>Causes:</b> What could be causing this stain, crack or damp patch, and what can I check myself before calling someone? Are any of these issues connected?</li>
+      <li><b>Quotes:</b> How do these quotes compare? What is missing from them, and what should I ask each company?</li>
+      <li><b>Gaps:</b> What have I missed? Which house facts or checklist lines should I look into, and what should I photograph next?</li>
+      <li><b>Planning:</b> With my budget, what should I do this year, and what can wait? What should I set aside for things that are wearing out?</li>
+    </ul>
+    <p class="caution"><b>Treat its answers as a starting point.</b> Its costs are estimates, not quotes, and it can be wrong about what it cannot see. Have a professional look at anything about safety, the structure, gas or electrics before acting on it.</p>
+    <p><button type="button" id="btnAiGuideExport">Export for AI…</button></p>`,
+};
+
+$('#btnAiGuide').addEventListener('click', () => {
+  closeMenus();
+  showInfo(AI_GUIDE.title, AI_GUIDE.html);
+});
+
+$('#tipsBody').addEventListener('click', (e) => {
+  if (e.target.id !== 'btnAiGuideExport') return;
+  $('#tipsDialog').close('cancel');
+  $('#btnAi').click();
+});

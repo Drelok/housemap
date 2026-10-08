@@ -2,6 +2,8 @@
 
 A plain static web app with no build step. `js/load.js` loads the scripts in order, and the list in
 `sw.js` must be kept in step with it. The CSP forbids inline script and `fetch`.
+The one exception to matching lists is `js/tutorial.js`: it is loaded on demand, when the tutorial house is opened, so it is listed on
+its own in `sw.js` and not in `js/load.js`.
 
 ## Preview
 
@@ -25,6 +27,10 @@ branch updates the preview. Under `/preview/` the app keeps its storage apart (`
   - and, where the window asks for an answer, a `.actions.winFoot` bottom bar with its buttons.
   - The top and bottom bars stay put while the body scrolls. The ✕ closes as Cancel: nothing changes.
   - Small one-line questions (`#askDialog`) are the exception and keep just their buttons.
+- The guided tour's `#tourCard` is not a window: it is a non-modal card in a corner, so the app stays usable around it. A step
+  that opens a window moves the card inside it.
+- The tutorial house (`js/tutorial.js`) shows the app's features; when a feature is added or changed, update the tutorial
+  house and its tour steps (`js/tour.js`) to match.
 
 ## Documentation
 

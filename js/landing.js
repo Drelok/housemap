@@ -1,7 +1,7 @@
 'use strict';
 
 // The start page: open a known project, start a new one (a short wizard), open an existing
-// project folder, or delete a project.
+// project folder, open the tutorial house, or delete a project.
 
 let known = []; // projects listed on the start page
 let deleting = false; // picking a project to delete
@@ -72,6 +72,7 @@ async function startEditor(p) {
   setTool('select');
   fitView();
   renderAll();
+  renderTutorialMenu();
   await refreshUnprocessed();
   showTips(floor().kind);
 }
@@ -299,3 +300,63 @@ $('#wizard').addEventListener('submit', async (e) => {
     landingError(err);
   }
 });
+
+// ---------- the tutorial house ----------
+// Its plan and photos are in js/tutorial.js, which is loaded only the first time it is wanted.
+
+function loadTutorial() {
+  if (typeof tutorialPlan === 'function') return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = fresh('js/tutorial.js');
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('the tutorial house could not be loaded'));
+    document.head.append(s);
+  });
+}
+
+// Writes the tutorial house into the folder open in store.root, as it first comes, and opens it.
+async function writeTutorial(onStep) {
+  const text = planFileText(await unpackTutorial(onStep));
+  store.planFile = PLAN_FILE;
+  await store.write(PLAN_FILE, text);
+  await store.write(PLAN_FILE + BACKUP_EXT, text);
+  await startEditor(normalizePlan(JSON.parse(text))); // read back as any saved plan is
+}
+
+$('#btnTutorial').addEventListener('click', async () => {
+  const button = $('#btnTutorial');
+  const label = button.textContent;
+  try {
+    await loadTutorial();
+    store.root = await store.tutorialFolder();
+    // Opened before: the copy there, with whatever was changed in it, is opened again.
+    if (await store.findPlanFile()) await openProject(store.root);
+    else await writeTutorial((i, n) => { button.textContent = `Unpacking ${i} of ${n}…`; });
+    if (plan) startTour();
+  } catch (err) {
+    store.root = null;
+    landingError(err);
+  } finally {
+    button.textContent = label;
+  }
+});
+
+// Puts the tutorial house back as it came: its plan, photos and quote files are deleted and
+// written again. Nothing changed since is kept.
+async function resetTutorial() {
+  await loadTutorial();
+  clearTimeout(saveTimer);
+  unsaved = false;
+  sel = null;
+  for (const path of [...urls.keys(), ...thumbs.keys()]) dropUrl(path);
+  await io(async () => {
+    for (const name of ['photos', 'reference', 'quotes']) {
+      await store.root.removeEntry(name, { recursive: true }).catch((e) => {
+        if (e.name !== 'NotFoundError') throw e;
+      });
+    }
+  });
+  await writeTutorial();
+  startTour();
+}

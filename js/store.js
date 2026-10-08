@@ -30,6 +30,13 @@ const store = {
     return projects.getDirectoryHandle(slug(name, 'house') + '-' + uid(), { create: true });
   },
 
+  // The tutorial house always has the same folder in the browser's storage, wherever the
+  // user's own projects are kept, so opening it again finds the copy already there.
+  async tutorialFolder() {
+    const projects = await (await navigator.storage.getDirectory()).getDirectoryHandle(PROJECTS_DIR, { create: true });
+    return projects.getDirectoryHandle('tutorial-house', { create: true });
+  },
+
   async dir(path, create = false) {
     let d = this.root;
     for (const part of path.split('/').filter(Boolean)) d = await d.getDirectoryHandle(part, { create });
