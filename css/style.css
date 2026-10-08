@@ -272,7 +272,9 @@ dialog label.check { margin-top: 12px; color: #222; font-size: 14px; }
 #saveState.failed { color: #b3261e; font-weight: 600; }
 .menuList label.check { margin: 0; padding: 4px 10px 4px 6px; color: #222; font-size: 14px; cursor: pointer; }
 .menuList label.check:hover { background: #f0f0f0; border-radius: 4px; }
-#viewMenu .menuBtn.some { border-color: #e0a800; background: #fff8e1; }
+#viewMenu .menuBtn.some, #fileMenu .menuBtn.due { border-color: #e0a800; background: #fff8e1; }
+#exportAge { color: #777; font-size: 12px; }
+.project span.due { color: #8a6100; font-weight: 600; }
 #printDialog label { color: #222; font-size: 13px; }
 
 /* ---------- zoom buttons, the Find box and the help windows ---------- */

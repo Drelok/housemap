@@ -750,4 +750,5 @@ function renderAll() {
   renderSizeWarning();
   renderPhotoSummary();
   renderViewBar();
+  renderExportAge();
 }

@@ -25,6 +25,12 @@ async function showLanding(note = '') {
       const listed = await Promise.all(known.map((k) => k.handle.isSameEntry(p.handle)));
       if (!listed.includes(true)) known.push(p);
     }
+    // A project kept in the browser shows how long since it was last exported, read from its plan,
+    // as the zip is the only copy of it anywhere else. Its folder name means nothing to anyone.
+    for (const p of known) {
+      p.exportedOn = await p.handle.getFileHandle(PLAN_FILE).then((h) => h.getFile()).then((f) => f.text())
+        .then((t) => JSON.parse(t).exportedOn || '').catch(() => null);
+    }
   }
   renderProjects();
 }
@@ -32,7 +38,9 @@ async function showLanding(note = '') {
 function renderProjects() {
   $('#projectList').className = deleting ? 'deleting' : '';
   $('#projectList').innerHTML = (deleting ? '<p class="warn">Choose the project to delete.</p>' : '')
-    + known.map((p, i) => `<button class="project" data-i="${i}"><b>${esc(p.name)}</b><span>${esc(p.handle.name)}</span></button>`).join('');
+    + known.map((p, i) => `<button class="project" data-i="${i}"><b>${esc(p.name)}</b>${p.exportedOn == null
+      ? `<span>${esc(p.handle.name)}</span>`
+      : `<span${backupDue(p.exportedOn) ? ' class="due"' : ''}>${exportAgeWords(p.exportedOn)}</span>`}</button>`).join('');
   $('#btnTrash').hidden = !known.length;
   $('#btnTrash').classList.toggle('active', deleting);
   $('#btnTrash').title = deleting ? 'Cancel deleting' : 'Delete a project';
@@ -275,6 +283,7 @@ $('#wizard').addEventListener('submit', async (e) => {
       // belong to the project it came from.
       p.name = name;
       if ($('#wizAddress').value.trim()) p.address = $('#wizAddress').value.trim();
+      delete p.exportedOn; // this copy has not been exported from here yet
     }
     store.planFile = PLAN_FILE;
     await store.write(PLAN_FILE, planFileText(p));

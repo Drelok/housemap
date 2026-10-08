@@ -60,7 +60,7 @@ photos/processed/         placed photos, by floor and room</pre>
         <svg class="logo" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg>
         <span>File</span> ▾</button>
       <span class="menuList" hidden>
-        <button id="btnExportAll" title="Download the whole project as one zip file: the plan, every photo and the aerial picture. Start a new project from it to bring everything across.">Export project (.zip)</button>
+        <button id="btnExportAll" title="Download the whole project as one zip file: the plan, every photo and the aerial picture. Start a new project from it to bring everything across.">Export project (.zip) <small id="exportAge"></small></button>
         <button id="btnExport" title="Download a copy of the plan file on its own, without photos">Export plan only</button>
         <button id="btnImport" title="Replace this project's plan with a .housemap.json file. Photos are not brought in; to bring a whole project across, start a new project from an exported .zip.">Import plan…</button>
         <button id="btnCsv" title="Download the issue list as a spreadsheet">Export issues (CSV)</button>
@@ -177,6 +177,7 @@ photos/processed/         placed photos, by floor and room</pre>
           </select></label>
           <label>Category<select id="isCat"></select></label>
           <label>On<select id="isFloor"></select></label>
+          <label>Room<select id="isRoom"></select></label>
           <label>Group by<select id="isGroup"></select></label>
           <button class="addNoPin" title="For something with no one spot to pin: the roof, the wiring, the plumbing, radon, or damp through a whole floor">Add issue without a pin…</button>
         </div>

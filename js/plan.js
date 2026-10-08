@@ -67,6 +67,17 @@ const EGRESS_SILL = 44 / 12; // the highest an egress window's sill may be, unde
 // Where a basement door to the outside opens onto.
 const DOOR_ONTO = [['', 'Not said'], ['grade', 'Ground level: a walk-out'], ['stairwell', 'Steps up to the yard: an outside stairwell or bulkhead']];
 const INTERIOR_TOOLS = ['door', 'window', 'stairs', 'item'];
+// A project kept in the browser, rather than in a folder, is lost if the browser's site data is
+// cleared. Past this many days since it was last exported as a zip, the app says so.
+const BACKUP_DAYS = 14;
+const daysSince = (stamp) => Math.round((new Date(dayStamp()) - new Date(stamp)) / 86400000);
+// "Last exported today", "Last exported 23 days ago", or "Never exported".
+function exportAgeWords(stamp) {
+  if (!stamp) return 'Never exported';
+  const d = daysSince(stamp);
+  return `Last exported ${d <= 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`}`;
+}
+const backupDue = (stamp) => !stamp || daysSince(stamp) > BACKUP_DAYS;
 // What a room's floor is covered with, kept in `cover`. The first of a room's details a contractor
 // or an AI asks for when pricing work in it.
 const FLOOR_COVERS = [['', 'Not said'], ['carpet', 'Carpet'], ['hardwood', 'Hardwood'], ['engineered', 'Engineered wood'], ['laminate', 'Laminate'], ['vinyl', 'Vinyl, plank or sheet'], ['tile', 'Ceramic or stone tile'], ['concrete', 'Bare concrete'], ['other', 'Something else']]; // offered on the floors, not on the exterior sheet

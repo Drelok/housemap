@@ -82,6 +82,15 @@ const fileBase = () => slug(plan.name, 'house');
 
 $('#btnClose').addEventListener('click', closeProject);
 
+// How long since the project was last exported, beside Export project (.zip). A project kept in
+// the browser that is due for another gets the File button marked, so the copy is not forgotten.
+function renderExportAge() {
+  $('#exportAge').textContent = exportAgeWords(plan.exportedOn);
+  const due = !store.canPickFolder && backupDue(plan.exportedOn) && (plan.issues.length || plan.photos.length || plan.floors.some((f) => f.rooms.length));
+  $('#fileMenu .menuBtn').classList.toggle('due', !!due);
+  $('#fileMenu .menuBtn').title = due ? `${exportAgeWords(plan.exportedOn)}. This project is kept only in this browser: export it as a zip to keep a copy.` : 'Import, export and close the project';
+}
+
 $('#btnExport').addEventListener('click', () => {
   download(fileBase() + '.housemap.json', planFileText(), 'application/json');
 });
@@ -105,6 +114,9 @@ async function fileMenuBusy(work, failed) {
 $('#btnExportAll').addEventListener('click', () => fileMenuBusy(async (say) => {
   const zip = await exportProject((i, n) => say(`Packing ${i} of ${n}…`));
   download(fileBase() + '.housemap.zip', zip, 'application/zip');
+  plan.exportedOn = dayStamp();
+  save();
+  renderExportAge();
 }, 'Could not export the project: '));
 
 $('#btnImport').addEventListener('click', () => $('#fileInput').click());

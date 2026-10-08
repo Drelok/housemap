@@ -71,11 +71,27 @@ function renderIssuesSheet() {
   const chosen = floorBox.value;
   floorBox.innerHTML = '<option value="">Every sheet</option>' + plan.floors.map((f) => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
   floorBox.value = plan.floors.some((f) => f.id === chosen) ? chosen : '';
+  // The rooms that have issues in them, on the sheet chosen or on every sheet, named with their
+  // sheet where more than one is listed. "Not in a room" takes the rest: whole floors, the whole
+  // house, and pins out in the open.
+  const roomBox = $('#isRoom');
+  const room = roomBox.value;
+  const rooms = [];
+  for (const i of plan.issues) {
+    const r = issueRoom(i);
+    if (r && !rooms.includes(r) && (!floorBox.value || i.floorId === floorBox.value)) rooms.push(r);
+  }
+  const sheetOf = (r) => plan.floors.find((f) => f.rooms.includes(r));
+  const label = (r) => roomTitle(r) + (floorBox.value ? '' : ` (${sheetOf(r).name})`);
+  rooms.sort((a, b) => plan.floors.indexOf(sheetOf(a)) - plan.floors.indexOf(sheetOf(b)) || roomTitle(a).localeCompare(roomTitle(b)));
+  roomBox.innerHTML = '<option value="">Every room</option>' + rooms.map((r) => `<option value="${r.id}">${esc(label(r))}</option>`).join('') + '<option value="none">Not in a room</option>';
+  roomBox.value = room === 'none' || rooms.some((r) => r.id === room) ? room : '';
 
   const status = $('#isStatus').value;
   const shown = plan.issues.filter((i) => (!status || (status === 'open' ? i.status !== 'Done' : i.status === status))
     && (!$('#isCat').value || i.category === $('#isCat').value)
-    && (!floorBox.value || i.floorId === floorBox.value));
+    && (!floorBox.value || i.floorId === floorBox.value)
+    && (!roomBox.value || (roomBox.value === 'none' ? !issueRoom(i) : issueRoom(i)?.id === roomBox.value)));
   const open = shown.filter((i) => i.status !== 'Done');
   $('#isSummary').innerHTML = plan.issues.length
     ? `<b>${open.length}</b> to do, <b>${costWords(open)}</b>${shown.length > open.length ? ` · ${shown.length - open.length} done` : ''}${shown.length < plan.issues.length ? ` · showing ${shown.length} of ${plan.issues.length}` : ''}`
