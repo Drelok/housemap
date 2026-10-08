@@ -10,22 +10,46 @@
 // to the far end, with a corner at each change of direction, and `w` is how wide they are. `dir`
 // is 'up' or 'down' from this floor and `to` is the id of the floor they lead to.
 
-// Usual sizes in inches: `w` across the item, `d` from its back to its front.
+// Usual sizes in inches: `w` across the item, `d` from its back to its front. `group` sorts them in
+// the lists they are chosen from. `record` marks an appliance or a system, whose make, model and
+// age are worth keeping: what a repair needs first, and how an assistant judges what is wearing out.
+// Only what is built in belongs here; furniture and anything else that moves out with the owner do not.
 const ITEM_KINDS = [
-  { id: 'toilet', label: 'Toilet', w: 20, d: 28 },
-  { id: 'sink', label: 'Bathroom sink', w: 24, d: 21 },
-  { id: 'tub', label: 'Bathtub', w: 60, d: 30 },
-  { id: 'shower', label: 'Shower', w: 36, d: 36 },
-  { id: 'ksink', label: 'Kitchen sink', w: 33, d: 22 },
-  { id: 'counter', label: 'Counter or island', w: 48, d: 25 },
-  { id: 'stove', label: 'Stove or range', w: 30, d: 26 },
-  { id: 'fridge', label: 'Refrigerator', w: 36, d: 30, text: 'REF' },
-  { id: 'dishwasher', label: 'Dishwasher', w: 24, d: 24, text: 'DW' },
-  { id: 'washer', label: 'Washer', w: 27, d: 30, text: 'W' },
-  { id: 'dryer', label: 'Dryer', w: 27, d: 30, text: 'D' },
-  { id: 'wh', label: 'Water heater', w: 22, d: 22, text: 'WH' },
-  { id: 'furnace', label: 'Furnace or air handler', w: 22, d: 30, text: 'FURN' },
+  { id: 'toilet', label: 'Toilet', w: 20, d: 28, group: 'Plumbing' },
+  { id: 'sink', label: 'Bathroom sink', w: 24, d: 21, group: 'Plumbing' },
+  { id: 'tub', label: 'Bathtub', w: 60, d: 30, group: 'Plumbing' },
+  { id: 'shower', label: 'Shower', w: 36, d: 36, group: 'Plumbing' },
+  { id: 'usink', label: 'Laundry or utility sink', w: 24, d: 22, group: 'Plumbing' },
+  { id: 'drain', label: 'Floor drain', w: 6, d: 6, group: 'Plumbing' },
+  { id: 'shutoff', label: 'Main water shutoff', w: 6, d: 6, text: 'WATER', group: 'Plumbing' },
+  { id: 'ksink', label: 'Kitchen sink', w: 33, d: 22, group: 'Kitchen' },
+  { id: 'counter', label: 'Counter or island', w: 48, d: 25, group: 'Kitchen' },
+  { id: 'upper', label: 'Upper (wall) cabinets', w: 36, d: 12, text: 'UPPER', group: 'Kitchen' },
+  { id: 'tall', label: 'Tall cabinet or pantry', w: 24, d: 24, text: 'PANTRY', group: 'Kitchen' },
+  { id: 'stove', label: 'Stove or range', w: 30, d: 26, group: 'Kitchen', record: true },
+  { id: 'oven', label: 'Wall oven', w: 30, d: 24, text: 'OVEN', group: 'Kitchen', record: true },
+  { id: 'fridge', label: 'Refrigerator', w: 36, d: 30, text: 'REF', group: 'Kitchen', record: true },
+  { id: 'dishwasher', label: 'Dishwasher', w: 24, d: 24, text: 'DW', group: 'Kitchen', record: true },
+  { id: 'washer', label: 'Washer', w: 27, d: 30, text: 'W', group: 'Laundry', record: true },
+  { id: 'dryer', label: 'Dryer', w: 27, d: 30, text: 'D', group: 'Laundry', record: true },
+  { id: 'wh', label: 'Water heater', w: 22, d: 22, text: 'WH', group: 'Heating and utilities', record: true },
+  { id: 'furnace', label: 'Furnace or air handler', w: 22, d: 30, text: 'FURN', group: 'Heating and utilities', record: true },
+  { id: 'boiler', label: 'Boiler', w: 24, d: 30, text: 'BOILER', group: 'Heating and utilities', record: true },
+  { id: 'radiator', label: 'Radiator', w: 36, d: 9, group: 'Heating and utilities' },
+  { id: 'baseboard', label: 'Baseboard heater', w: 48, d: 4, group: 'Heating and utilities' },
+  { id: 'panel', label: 'Electrical panel', w: 15, d: 4, text: 'PANEL', group: 'Heating and utilities', record: true },
+  { id: 'sump', label: 'Sump pump and pit', w: 20, d: 20, text: 'SUMP', group: 'Heating and utilities', record: true },
+  { id: 'softener', label: 'Water softener or filter', w: 14, d: 14, text: 'SOFT', group: 'Heating and utilities', record: true },
+  { id: 'fireplace', label: 'Fireplace', w: 60, d: 24, text: 'FIREPLACE', group: 'Fireplaces and built-ins', record: true },
+  { id: 'woodstove', label: 'Wood or pellet stove', w: 30, d: 30, text: 'STOVE', group: 'Fireplaces and built-ins', record: true },
+  { id: 'shelves', label: 'Built-in shelves', w: 48, d: 12, group: 'Fireplaces and built-ins' },
+  { id: 'bench', label: 'Built-in bench or window seat', w: 48, d: 18, text: 'SEAT', group: 'Fireplaces and built-ins' },
+  { id: 'desk', label: 'Built-in desk', w: 48, d: 24, text: 'DESK', group: 'Fireplaces and built-ins' },
+  { id: 'hatch', label: 'Attic hatch', w: 30, d: 22, text: 'ATTIC', group: 'Safety and access' },
+  { id: 'alarm', label: 'Smoke or CO alarm', w: 6, d: 6, text: 'ALARM', group: 'Safety and access', record: true },
 ];
+// The lists of kinds, grouped as above: [[group, [kind, ...]], ...].
+const ITEM_GROUPS = [...new Set(ITEM_KINDS.map((k) => k.group))].map((g) => [g, ITEM_KINDS.filter((k) => k.group === g)]);
 const TREAD = 10 / 12; // how deep a stair tread is drawn
 const CATCH = 4; // degrees within which a turned item or a flight of stairs squares itself up
 
@@ -285,12 +309,40 @@ function fixtureSym(it) {
   } else if (it.kind === 'stove') {
     s += line(-W / 2, -D * 0.38, W / 2, -D * 0.38);
     for (const x of [-1, 1]) for (const y of [-1, 1]) s += oval(x * W * 0.24, D * 0.06 + y * D * 0.2, m * 0.13, m * 0.13);
-  } else if (it.kind === 'fridge' || it.kind === 'dishwasher') {
-    s += line(-W / 2, D * 0.4, W / 2, D * 0.4);
   } else if (it.kind === 'washer' || it.kind === 'dryer') {
     s += oval(0, 0, m * 0.36, m * 0.36);
-  } else if (it.kind === 'wh') {
+  } else if (it.kind === 'wh' || it.kind === 'softener') {
     s = oval(0, 0, W / 2, D / 2);
+  } else if (it.kind === 'usink') {
+    s += rect(-W * 0.38, -D * 0.3, W * 0.76, D * 0.66, m * 0.08) + oval(0, -D * 0.38, m * 0.05, m * 0.05, 'ink');
+  } else if (it.kind === 'drain' || it.kind === 'shutoff') {
+    s = oval(0, 0, W / 2, D / 2) + line(-W * 0.35, 0, W * 0.35, 0) + (it.kind === 'drain' ? line(0, -D * 0.35, 0, D * 0.35) : '');
+  } else if (it.kind === 'upper') {
+    s = body('dashed') + line(-W / 2, -D / 2, W / 2, D / 2);
+  } else if (it.kind === 'tall') {
+    s += line(-W / 2, -D / 2, W / 2, D / 2) + line(-W / 2, D / 2, W / 2, -D / 2);
+  } else if (it.kind === 'oven' || it.kind === 'fridge' || it.kind === 'dishwasher') {
+    s += line(-W / 2, D * 0.4, W / 2, D * 0.4);
+  } else if (it.kind === 'radiator') {
+    for (let k = 1; k < 8; k++) s += line(-W / 2 + (W * k) / 8, -D / 2, -W / 2 + (W * k) / 8, D / 2);
+  } else if (it.kind === 'baseboard') {
+    s += line(-W / 2, 0, W / 2, 0);
+  } else if (it.kind === 'sump') {
+    s = oval(0, 0, W / 2, D / 2) + oval(0, 0, W * 0.2, D * 0.2, 'ink');
+  } else if (it.kind === 'fireplace') {
+    // The firebox opens to the front, with the hearth before it.
+    s += `<polygon class="ink" points="${-W * 0.28},${D / 2} ${W * 0.28},${D / 2} ${W * 0.18},${-D * 0.1} ${-W * 0.18},${-D * 0.1}"/>`;
+  } else if (it.kind === 'woodstove') {
+    s += oval(0, -D * 0.28, m * 0.12, m * 0.12, 'ink');
+  } else if (it.kind === 'shelves') {
+    const n = Math.max(2, Math.round(W / 2.5));
+    for (let k = 1; k < n; k++) s += line(-W / 2 + (W * k) / n, -D / 2, -W / 2 + (W * k) / n, D / 2);
+  } else if (it.kind === 'bench' || it.kind === 'desk') {
+    s += rect(-W / 2 + m * 0.12, -D / 2 + m * 0.12, W - m * 0.24, D - m * 0.24);
+  } else if (it.kind === 'hatch') {
+    s = body('dashed') + line(-W / 2, -D / 2, W / 2, D / 2) + line(-W / 2, D / 2, W / 2, -D / 2);
+  } else if (it.kind === 'alarm') {
+    s = oval(0, 0, W / 2, D / 2) + oval(0, 0, W * 0.18, D * 0.18, 'ink');
   } else if (!kind) {
     s = body('unset');
   }
@@ -498,11 +550,10 @@ function itemInspector(it) {
   const del = (it.kind ? DUP_BUTTON : '') + '<button class="danger" id="btnDelete">Delete</button>';
   const held = itemLockedBy(it);
   const lockNote = held ? `<p class="note step">Held in place because ${esc(roomTitle(held))} is locked. Unlock that room to drag or turn it on the plan.</p>` : '';
-  const fixtures = ITEM_KINDS.map((k) => [k.id, k.label]);
   if (!it.kind) {
     return `<h2>Fixture</h2>
       <p class="note pick">Choose what this is:</p>
-      <div class="kinds">${fixtures.map(([id, label]) => `<button data-item-kind="${id}">${label}</button>`).join('')}</div>
+      ${ITEM_GROUPS.map(([g, kinds]) => `<h3 class="kindGroup">${g}</h3><div class="kinds">${kinds.map((k) => `<button data-item-kind="${k.id}">${k.label}</button>`).join('')}</div>`).join('')}
       <div class="actions">${del}</div>`;
   }
   const quarter = '<p class="muted small">Round to the nearest 1/4 inch. Fractions are fine: 5 3/4.</p>';
@@ -511,12 +562,13 @@ function itemInspector(it) {
   if (!isStairs(it)) {
     return `<h2>Fixture</h2>
       ${lockNote}
-      ${field('Type', 'item', 'kind', it.kind, { options: fixtures })}
+      <label>Type<select data-obj="item" data-field="kind">${ITEM_GROUPS.map(([g, kinds]) => `<optgroup label="${g}">${kinds.map((k) => `<option value="${k.id}"${k.id === it.kind ? ' selected' : ''}>${k.label}</option>`).join('')}</optgroup>`).join('')}</select></label>
       ${lengthField('Width', 'item', 'w', it.w)}
       ${lengthField('Depth, back to front', 'item', 'h', it.h)}
       ${quarter}
       ${field('Turned (°, clockwise; 0 = back to the top)', 'item', 'rot', Math.round((it.rot || 0) * 10) / 10, { num: true, step: 5 })}
       ${note}
+      ${itemKind(it.kind)?.record ? recordHtml(it) : ''}
       <p class="muted">Drag it into place; its corners catch on walls and on other fixtures. Drag the round yellow handle in front of it to turn it: it catches on the direction of the walls, so it sits square to a wall drawn at any angle. Alt turns or places it freely. Choosing a type sets its usual size.</p>
       <div class="actions">
         ${turn}
@@ -562,6 +614,23 @@ function itemInspector(it) {
 }
 
 // A choice from one of an item's lists.
+// The make, model and age of an appliance or a system, folded away until wanted. What a repair or a
+// replacement part needs first, and what tells an assistant how near it may be to the end of its life.
+const RECORD_FIELDS = [['brand', 'Brand'], ['model', 'Model number'], ['serial', 'Serial number'], ['warranty', 'Warranty, such as "parts until 2029"']];
+const hasRecord = (it) => RECORD_FIELDS.some(([key]) => it[key]) || it.installed;
+
+function recordHtml(it) {
+  const age = it.installed ? ` · about ${Math.max(0, new Date().getFullYear() - it.installed)} years old` : '';
+  return `<details class="record"${hasRecord(it) ? ' open' : ''}>
+      <summary>Make, model and age${age}</summary>
+      <div class="row">${field('Brand', 'item', 'brand', it.brand || '')}${field('Installed (year)', 'item', 'installed', it.installed || '', { num: true })}</div>
+      ${field('Model number', 'item', 'model', it.model || '')}
+      ${field('Serial number', 'item', 'serial', it.serial || '')}
+      ${field('Warranty', 'item', 'warranty', it.warranty || '')}
+      <p class="muted small">Usually on a label inside a door, on the back or side, or near the controls. A photo of the label on a photo marker beside it keeps it too.</p>
+    </details>`;
+}
+
 function setItemField(it, name, value) {
   if (name === 'kind') setItemKind(it, value);
   else if (name === 'to') {

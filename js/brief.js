@@ -359,7 +359,31 @@ function houseWords() {
       out.push(`- Stairs ${it.dir === 'down' ? 'down' : 'up'}${to ? ` to ${to.name}` : ''}${roomAt(f, stairMiddle(it)) ? `, in ${roomTitle(roomAt(f, stairMiddle(it)))}` : ''}`);
     }
   }
+  const systems = applianceWords();
+  if (systems) out.push('', '### Appliances and systems', '', systems);
   return out.join('\n');
+}
+
+// Every appliance and system drawn, with its make, model and age where they are known, and said
+// to be unknown where not, as that is worth asking about.
+function applianceWords() {
+  const lines = [];
+  for (const f of plan.floors) {
+    for (const it of f.items) {
+      const k = itemKind(it.kind);
+      if (!k?.record) continue;
+      const r = roomAt(f, itemMiddle(it));
+      const make = [it.brand, it.model && `model ${it.model}`, it.serial && `serial ${it.serial}`].filter(Boolean).join(', ');
+      const facts = [
+        make || 'make and model not recorded',
+        it.installed ? `installed ${yearWords(it.installed)}` : 'age not recorded',
+        it.warranty && `warranty: ${it.warranty}`,
+        it.note,
+      ].filter(Boolean).join('; ');
+      lines.push(`- **${k.label}** (${f.name}${r ? `, ${roomTitle(r)}` : ''}): ${facts}`);
+    }
+  }
+  return lines.join('\n');
 }
 
 // The whole brief as Markdown. `o` is what was ticked in the export window, with `issues`, the

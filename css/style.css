@@ -119,6 +119,10 @@ header, #tabs, #guide, #aerial { user-select: none; }
 .plan .goto circle { fill: #24476b; stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; }
 .plan .goto:hover circle { fill: #c2185b; }
 .plan .goto polygon { fill: #fff; }
+.kindGroup { margin: 10px 0 4px; font-size: 12px; color: #24476b; }
+.plan .item .sym .dashed { stroke-dasharray: 4 3; }
+details.record { margin: 4px 0 10px; border: 1px solid #ddd; border-radius: 5px; padding: 0 8px; }
+details.record summary { cursor: pointer; padding: 6px 0; font-size: 13px; color: #24476b; }
 .kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
 .kinds button { text-align: left; }
 
