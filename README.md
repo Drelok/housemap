@@ -114,6 +114,7 @@ Renaming a room or floor moves its photos to a folder with the new name. Deletin
 - **Zoom:** the mouse wheel zooms at the pointer. The **−** and **+** buttons at the bottom right of the plan, and the `-` and `+` keys, zoom about the middle of the view. The figure between the buttons is the zoom level: 100% is ten pixels to the foot, the point at which the grid squares become 1 ft. Click it to go to 100%. *Fit to view* (or `0`) shows the whole sheet.
 - **Find:** type part of a name in the *Find* box at the top (Ctrl+F) to list the rooms, outlines, issues, photo markers, fixtures, stairs and sheets that match, on every sheet. Issues are matched on their number, title, description, category and status; photo markers on their file names, original names and notes; fixtures on their type and note. Click a result, or press Enter for the highlighted one (the arrow keys move the highlight), to go to its sheet with it selected. The view moves only if it has to: it centres on something out of sight and zooms out for something too big to fit.
 - **Duplicate:** *Duplicate* in the side panel, or Ctrl+D, copies the selected room, outline, fixture, stairs or issue. The copy is set down just beside the original and selected, ready to drag into place. It keeps the name, size and settings of the original, except that a copy of a locked room is not locked. Doors and photo markers are not duplicated.
+- **3D view:** *View* → *3D view…* draws the house in three dimensions from the plan: the outside, with its windows and doors, and the floors spread apart with their walls cut away. See *Asking an AI about the house* for what each shows.
 - **Shortcut keys:** *Keyboard shortcuts* under the **?** button, or the `?` key, lists every key.
 - **Settings:** *File* → *Settings…* holds how the app behaves: whether the getting-started tips are shown in new projects, whether a preview is shown beside a selected photo marker, whether the view scrolls when something is dragged to its edge, and which way the mouse wheel zooms. These are kept in the browser, not in the project, so they apply to every project opened in it. The same window leads to the *House standards* of the open project.
 - **About:** *About* under the **?** button, and *About this app* on the start page, gives the version and what the app does with your files: nothing leaves the computer.
@@ -165,6 +166,8 @@ README-FIRST.md               the brief: the house and every issue in plain word
 issues.csv                    the same issues as a table
 plans/main-floor.png          a picture of each sheet, with the numbered issue pins
 plans/issue-07-close-up.png   a close-up of the plan around each pinned issue that has no photos
+plans/3d-outside.png          the outside in 3D: the outline at the height of its floors, with windows and doors
+plans/3d-floors.png           each floor in 3D, walls cut away, with fixtures and numbered issue pins
 plans/aerial.jpg              the aerial picture of the lot, if one has been added
 photos/issue-05-photo-1.jpg   small copies of each issue's photos, named after the issue
 ```
@@ -177,8 +180,10 @@ photos/issue-05-photo-1.jpg   small copies of each issue's photos, named after t
 - **Photos:** every photo on every marker linked to an issue, 1600 pixels on the long edge, each with the room it was taken in and the way it faces. Pictures the browser cannot draw (RAW, usually HEIC) are left out and named in the brief.
 - **Close-ups:** an issue with a pin but no photos gets a close-up of the plan for 12 ft around its pin, with the pin shown selected, so its place can be seen even before a photo is taken. Untick the box for it to leave them out.
 - **House area:** the brief gives the floors above ground and the finished basement as separate figures, as listings and appraisals do, with the unfinished rest of the basement, and their total after.
+- **3D views:** two pictures drawn from the plan, seen from above at an angle with no perspective, so sizes compare across them. The outside raises the house outline to the height of its floors (the ceiling height in *House standards*, plus a foot between floors), with flat tops as the roof is not drawn, and shows each floor's windows (blue) and outside doors (brown) on the walls where they are, basement windows only as far as they come above the ground. Separate structures are drawn up to 10 ft. The floors view spreads the floors apart, lowest at the bottom, with their walls cut away at 3 ft so the rooms, fixtures, stairs and numbered issue pins can be seen. The same pictures are shown in the app with *View* → *3D view…*.
+- **Style ideas:** tick *Ask for style ideas* to have the brief ask for three exterior styles and two or three interior styles that would suit the house's footprint, floors and windows, with example pictures if the assistant can make them. With no photos of the outside, it is told to work from the plan, the 3D view and the aerial picture and to say what it has assumed. The styles can come back with the review, and are kept with its summary on the House sheet.
 - **Aerial picture:** a small copy of the aerial picture on the exterior sheet, if there is one, so the assistant can see the yard, driveway, streets and neighbours that are not drawn. Its top is the top of the plan pictures.
-- **Choices when exporting:** leave out the pictures of the sheets, the close-ups or the aerial picture; include issues marked Done; include photos not linked to an issue (under `photos/other/`); include the quote files; include contractors' contact details, which are otherwise left out; include your budget and money matters; include the Household box. The last three are private and are off unless ticked.
+- **Choices when exporting:** ask for style ideas; leave out the pictures of the sheets (and the 3D views with them), the close-ups or the aerial picture; include issues marked Done; include photos not linked to an issue (under `photos/other/`); include the quote files; include contractors' contact details, which are otherwise left out; include your budget and money matters; include the Household box. The last three are private and are off unless ticked.
 
 ### Bringing the review back
 
@@ -260,7 +265,7 @@ Version 1 and 2 files, which used decimal feet, are converted when opened and sa
 - **rooms** on a floor may hold `cover`, the floor covering: `carpet`, `hardwood`, `engineered`, `laminate`, `vinyl`, `tile`, `concrete` or `other`.
 - **photos:** a marker, and each of its `more`, may hold `taken`, when the photo was taken, as `YYYY-MM-DD HH:MM`. `photoTaken` on the plan holds the same for photos still waiting in `photos/unprocessed`, by file name.
 - **issues** may also hold `when` (`now`, `month`, `season` or `wait`), `trade` (words), `related` (the `id`s of issues it may be connected to, kept on both) and `aiNotes` (notes brought in from AI reviews).
-- **reviews:** optional; summaries kept from AI reviews, each `{ "date", "summary", "order" }`.
+- **reviews:** optional; summaries kept from AI reviews, each `{ "date", "summary", "order" }`, with `styles` where style ideas came back.
 - **household:** optional. `people`, `mobility`, `health`, `pets` and `changes` are words, left out of the export for AI unless asked for.
 - **checklist:** optional; the walkthrough. Each key is one line (`roof`, `gutters`, `grading`, `foundation`, `siding`, `windows`, `attic`, `plumbing`, `waterHeater`, `electrical`, `hvac`, `alarms`, `pests`, `radon`, `hazards`, `outside`) with a `state` of `fine`, `issue` or `unknown`, an optional `note`, and an optional `issueId`, the `id` of the issue added for it.
 - **units:** always `"inches"`. It is there for people reading the file; the app goes by `version`.
@@ -303,6 +308,7 @@ js/issues.js      the Issues sheet, every issue as one list
 js/search.js      the Find box
 js/print.js       printed floor plans and the issue report
 js/brief.js       the export for AI: the house in words, small photos, pictures of the sheets
+js/view3d.js      the house in 3D, drawn from the plan
 js/house.js       house facts, goals and the walkthrough checklist
 js/review.js      bringing an AI assistant's review back in
 js/landing.js     start page and new project wizard

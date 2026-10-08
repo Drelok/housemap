@@ -112,6 +112,8 @@ photos/processed/         placed photos, by floor and room</pre>
           <label class="check"><input type="checkbox" data-layer="photos" checked> Photo markers</label>
           <label class="check"><input type="checkbox" data-layer="issues" checked> Issue pins</label>
           <label class="check"><input type="checkbox" data-layer="outline" checked> Exterior outline under the floors</label>
+          <hr>
+          <button id="btn3d" title="The house drawn in three dimensions from the plan: the outside, with its windows and doors, and each floor with its walls cut away">3D view…</button>
         </span>
       </span>
       <span class="menu" id="searchMenu">
@@ -285,6 +287,7 @@ photos/processed/         placed photos, by floor and room</pre>
     <p class="muted">Makes one zip file to give to an AI assistant, such as Claude or ChatGPT, so it can look over the house with you. It holds a brief in plain words, <i>README-FIRST.md</i>, that gives the house facts, your goals and the walkthrough checklist, and says where each issue is and what is above and below it; a small copy of each issue's photos; a picture of each floor; and the issue list as a table. The brief opens with a request you can paste in.</p>
     <label class="check"><input type="checkbox" id="aiPlans" checked> A picture of each sheet, with the numbered issue pins</label>
     <label class="check"><input type="checkbox" id="aiSpots" checked> A close-up of the plan around each issue that has no photos, so its place can be seen</label>
+    <label class="check"><input type="checkbox" id="aiStyles"> Ask for style ideas: a few exterior and interior styles that would suit this layout, with example pictures if the assistant can make them</label>
     <label class="check"><input type="checkbox" id="aiAerial" checked> The aerial picture of the lot, if one has been added: it shows the yard, driveway, streets and neighbours that are not drawn</label>
     <label class="check"><input type="checkbox" id="aiDone"> Include issues marked Done</label>
     <label class="check"><input type="checkbox" id="aiOther"> Include photos that are not linked to an issue</label>
@@ -297,6 +300,15 @@ photos/processed/         placed photos, by floor and room</pre>
       <button type="button" data-close="cancel">Cancel</button>
       <button class="primary" value="ok">Export</button>
     </div>
+  </form>
+</dialog>
+
+<dialog id="view3dDialog">
+  <form method="dialog">
+    <h2>3D view</h2>
+    <p class="muted">Drawn from the plan, at the ceiling height in <i>House standards</i>. The roof is not drawn, so the tops are flat. The same pictures go into the export for AI.</p>
+    <div id="view3dBody"></div>
+    <div class="actions"><button class="primary" value="ok">Close</button></div>
   </form>
 </dialog>
 

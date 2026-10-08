@@ -25,6 +25,7 @@ The owner can bring your review into the app, where each suggestion is shown wit
   "version": 1,
   "summary": "Your overall view of the house and its issues, in plain words. Markdown is fine.",
   "order": "The order you suggest doing the work in, in plain words.",
+  "styles": "If style ideas were asked for: a short version of each, in plain words.",
   "issues": [
     {
       "issue": 12,
@@ -174,9 +175,12 @@ function reviewSuggestions(data) {
 
   const summary = typeof data.summary === 'string' ? data.summary.trim() : '';
   const order = typeof data.order === 'string' ? data.order.trim() : '';
-  if (summary || order) {
-    add('The review as a whole', `Keep its summary${order ? ' and suggested order of work' : ''} with the project, to read again on the House sheet`, '', () => {
-      (plan.reviews ||= []).push({ date: dayStamp(), summary, order });
+  const styles = typeof data.styles === 'string' ? data.styles.trim() : '';
+  if (summary || order || styles) {
+    const what = [summary && 'summary', order && 'suggested order of work', styles && 'style ideas'].filter(Boolean);
+    const said = what.length > 1 ? `${what.slice(0, -1).join(', ')} and ${what.at(-1)}` : what[0];
+    add('The review as a whole', `Keep its ${said} with the project, to read again on the House sheet`, '', () => {
+      (plan.reviews ||= []).push({ date: dayStamp(), summary, order, ...(styles && { styles }) });
     });
   }
   return { list: out, missing };
@@ -258,6 +262,7 @@ function reviewsHtml() {
           <summary>${esc(dateWords(r.date))}</summary>
           ${r.summary ? `<div class="reviewText">${esc(r.summary)}</div>` : ''}
           ${r.order ? `<h3>Suggested order of work</h3><div class="reviewText">${esc(r.order)}</div>` : ''}
+          ${r.styles ? `<h3>Style ideas</h3><div class="reviewText">${esc(r.styles)}</div>` : ''}
           <p class="aboutLine"><button type="button" data-review-drop="${plan.reviews.indexOf(r)}">Delete this review</button></p>
         </details>`).join('')}
     </section>`;

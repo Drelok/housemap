@@ -240,6 +240,20 @@ function photoWords(ph, shot) {
   return `taken on ${where}, facing ${facingWord(shot.dir)}${shot.taken ? `, on ${dateWords(shot.taken)}` : ''}${ph.note ? `. Note: ${lines(ph.note)}` : ''}`;
 }
 
+// What is asked for when the owner wants style ideas. With no photos of the outside, the assistant
+// has only the plan and the 3D view to go on, and is told so.
+function styleRequest() {
+  const outside = plan.photos.some((ph) => plan.floors.find((f) => f.id === ph.floorId)?.kind === 'exterior' && shotsOf(ph).some((s) => s.file));
+  return `## Style ideas
+
+The owner would like ideas for how the house could look. Going by the plans and the 3D views (the footprint, how many floors there are, and where the windows and doors are), suggest:
+
+- **three exterior styles** that would suit a house of this shape, each in a few sentences: roof shape, siding and trim, colours, windows and doors, porch or entry, and roughly what it would take to get there from what is there now;
+- **two or three interior styles** for the main rooms, such as the kitchen, living room and bathrooms: floors, walls, cabinets and fixtures, lighting and colours, keeping to the rooms as they are laid out.
+
+${outside ? 'There are photos of the outside among the photos; build on what is there.' : 'There are no photos of the outside, so work from the plan, the 3D view of the outside and the aerial picture, if there is one, and say what you have assumed.'} If you can make pictures, make one for each style, drawn to match this house's footprint and layout. Put a short version of the styles in \`styles\` in the review data block (see *Sending your review back*).`;
+}
+
 // How soon an issue should be dealt with, in words.
 const whenWords = (i) => (i.when ? WHEN_CHOICES.find(([v]) => v === i.when)?.[1] || i.when : '');
 
@@ -386,12 +400,12 @@ Written by House Map & Issue Tracker on ${today()} from the owner's own plan of 
 - **Status** is Open, In progress or Done.${o.done ? '' : ' Issues marked Done are left out of this brief.'}
 - **Order:** *Must be done after* names the issues the owner says have to be done before an issue can be, such as the roof before the ceiling under it, and *Waiting for this one* names those that wait for it in turn. Follow them to put the work in order; where there are none, the order is open.
 - **Costs** are in US dollars. *My estimate* is a low and a high figure, marked as the owner's own rough guess or as a figure an AI assistant gave earlier. A professional quote that has been accepted replaces it. "Not priced" means nobody has put a figure on it yet; it does not mean it is free.
-${o.aerialName ? `- **Aerial picture:** \`${o.aerialName}\` is a satellite or aerial picture of the lot, which the owner traced the outline of the house from. It shows what the plans leave out: the yard, patio, driveway, trees, streets and neighbours, and so which way water runs. Its top is the top of the plan pictures.\n` : ''}- **Photos** are in the \`photos\` folder, named after the issue they belong to (\`issue-05-photo-1.jpg\` is the first photo of issue 5), and are small copies of the originals.
+${o.views3d?.length ? `- **3D views:** ${o.views3d.map((n) => `\`${n}\``).join(' and ')} are drawn from the plan as seen from above at an angle, with no perspective: ${o.views3d.includes('plans/3d-outside.png') ? 'the outside is the house outline raised to the height of its floors, with flat tops as the roof is not drawn, and the windows (blue) and outside doors (brown) of each floor where they are; ' : ''}${o.views3d.includes('plans/3d-floors.png') ? 'the floors are spread apart, lowest at the bottom, with their walls cut away at 3 ft to show the rooms and fixtures.' : ''}\n` : ''}${o.aerialName ? `- **Aerial picture:** \`${o.aerialName}\` is a satellite or aerial picture of the lot, which the owner traced the outline of the house from. It shows what the plans leave out: the yard, patio, driveway, trees, streets and neighbours, and so which way water runs. Its top is the top of the plan pictures.\n` : ''}- **Photos** are in the \`photos\` folder, named after the issue they belong to (\`issue-05-photo-1.jpg\` is the first photo of issue 5), and are small copies of the originals.
 - \`issues.csv\` holds the same issues as a table.
 
 ## Suggested request
 
-> Here is a brief of my house and the issues I have found in it, with photos and floor plans. Please review the issues: say if any look to be in the wrong category, what should be done first and in what order, which ones may be connected (look at what is above and below each), and what I may have missed, going by the house facts and the walkthrough checklist as well. Take my goals${o.household ? ' and the people who live here' : ''} into account. Give a rough cost range for each issue that is not priced${plan.address ? `, for the area of ${plan.address}` : ' (ask me where the house is)'}. Tell me what else you would need to know to be more sure. When you are done, also write your answer as described under *Sending your review back* at the end of this file, so that I can bring it into the app.
+> Here is a brief of my house and the issues I have found in it, with photos and floor plans. Please review the issues: say if any look to be in the wrong category, what should be done first and in what order, which ones may be connected (look at what is above and below each), and what I may have missed, going by the house facts and the walkthrough checklist as well. Take my goals${o.household ? ' and the people who live here' : ''} into account.${o.styles ? ' I would also like style ideas for the house, as set out under *Style ideas* below.' : ''} Give a rough cost range for each issue that is not priced${plan.address ? `, for the area of ${plan.address}` : ' (ask me where the house is)'}. Tell me what else you would need to know to be more sure. When you are done, also write your answer as described under *Sending your review back* at the end of this file, so that I can bring it into the app.
 
 ## The house
 
@@ -399,7 +413,7 @@ ${houseWords()}
 
 ${houseBrief(o.money, o.household)}
 
-## Totals
+${o.styles ? styleRequest() + '\n\n' : ''}## Totals
 
 ${open.length} ${open.length === 1 ? 'issue is' : 'issues are'} still to do${blank ? `, of which ${blank} ${blank === 1 ? 'is' : 'are'} not priced` : ''}. The priced ones come to ${costRange(priced)}.
 
@@ -555,6 +569,12 @@ async function exportForAi(o, onStep = () => {}) {
     }
   }
   if (o.plans) entries.push(...await sheetPictures(onStep));
+  if (o.plans) {
+    onStep('3D views…');
+    const views = await view3dPictures();
+    o = { ...o, views3d: views.map((v) => v.name) };
+    entries.push(...views);
+  }
   // Issues with nothing to show them get a close-up of the plan around their pin instead.
   if (o.spots) {
     const bare = issues.filter((i) => pinned(i) && !issueShots(i).length);
