@@ -24,6 +24,16 @@ An installed copy checks for a newer version each time it is opened with a conne
 
 **Phones and tablets.** A project made on a phone lives inside that browser, on that device. The app asks the browser to keep it, but clearing the browser's site data, or removing the installed app on an iPhone, deletes it. *File* → *Export project (.zip)* is the copy to keep, and the way to move a project to a computer: see *Moving a project* below. So that the copy is not forgotten, the start page shows beside each such project when it was last exported (*Last exported 23 days ago*, or *Never exported*), *Export project (.zip)* in the File menu says the same, and once a project with anything in it has gone more than 14 days without an export the File button is marked in yellow until it is exported again. A project started from an exported zip counts as not yet exported from where it now is.
 
+## The tutorial house
+
+*Open the tutorial house* on the start page opens a made-up house that is already drawn and filled in, then a guided tour of what the app does. The house has a basement, two floors and an outside sheet with a garage, deck and porch. It has rooms with their finishes, doors and windows, fixtures and appliances, stairs between the floors, photos, issues with quotes, ratings and before and after photos, the House sheet filled in, and a maintenance schedule with jobs due.
+
+**The tour.** It is a small card in a corner with *Back* and *Next*. Each step takes the app to what it talks about by itself: it changes floor, selects a room or an issue, or opens the 3D view or the Print window. An orange ring marks the control the step is about, and many steps end with a *Try it* line. Everything stays usable while the card is up, and its ✕ or Esc ends the tour. The plan is fitted into the part of the screen the card leaves clear.
+
+**Keeping it.** The tutorial house is a project of its own, kept in the browser's storage wherever your own projects are. Change anything in it: opening it again opens your copy, and it can be deleted from the start page like any other project. While it is open, the **?** menu has *Take the tour* to run the tour again, and *Start the tutorial over…* to put the house back as it came, photos and all.
+
+**What it is made of.** It ships with the app, so it works offline in an installed copy. The plan is in `js/tutorial.js`, which is loaded only when the tutorial house is first opened. Its photos are simple pictures drawn when it is unpacked, each captioned as a tutorial photo. The dates in it count back from the day it is unpacked, so what is due or recently done reads sensibly whenever it is opened. It needs the browser's private storage, which a page opened straight from disk may not be given; use a hosted or local address (`python serve.py`) for it.
+
 ## Project folder
 
 Each house is one folder. *New project* asks for the house name, the number of floors and whether there is a basement, then sets this up in the folder you choose:
@@ -321,11 +331,13 @@ js/view3d.js      the house in 3D, drawn from the plan
 js/house.js       house facts, goals and the walkthrough checklist
 js/maintenance.js the maintenance schedule
 js/review.js      bringing an AI assistant's review back in
-js/landing.js     start page and new project wizard
+js/landing.js     start page, new project wizard and opening the tutorial house
+js/tour.js        the guided tour of the tutorial house
 js/main.js        toolbar, keyboard and start-up
+js/tutorial.js    the tutorial house and its drawn photos, loaded only when it is opened
 ```
 
-The scripts are plain files loaded in that order, so the page still works when opened straight from disk. A new script has to be added to the list in `js/load.js` and to the one in `sw.js`. The page's security policy does not run scripts or `onclick` attributes written into `index.html`; put code in a file and use `addEventListener`.
+The scripts are plain files loaded in that order, so the page still works when opened straight from disk. A new script has to be added to the list in `js/load.js` and to the one in `sw.js`. The one exception is `js/tutorial.js`, which `sw.js` lists on its own because it is loaded only when the tutorial house is opened. The page's security policy does not run scripts or `onclick` attributes written into `index.html`; put code in a file and use `addEventListener`.
 
 ## Accuracy
 

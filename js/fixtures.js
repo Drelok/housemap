@@ -649,7 +649,8 @@ const RECORD_FIELDS = [['brand', 'Brand'], ['model', 'Model number'], ['serial',
 const hasRecord = (it) => RECORD_FIELDS.some(([key]) => it[key]) || it.installed;
 
 function recordHtml(it) {
-  const age = it.installed ? ` · about ${Math.max(0, new Date().getFullYear() - it.installed)} years old` : '';
+  const years = Math.max(0, new Date().getFullYear() - it.installed);
+  const age = it.installed ? ` · ${years < 1 ? 'new this year' : years === 1 ? 'about a year old' : `about ${years} years old`}` : '';
   return `<details class="record"${hasRecord(it) ? ' open' : ''}>
       <summary>Make, model and age${age}</summary>
       <div class="row">${field('Brand', 'item', 'brand', it.brand || '')}${field('Installed (year)', 'item', 'installed', it.installed || '', { num: true })}</div>
