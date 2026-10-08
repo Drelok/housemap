@@ -135,7 +135,7 @@ $('#aiDialog').addEventListener('close', async (e) => {
   if (e.target.returnValue !== 'ok') return;
   const ticked = (id) => $(id).checked;
   await fileMenuBusy(async (say) => {
-    const zip = await exportForAi({ plans: ticked('#aiPlans'), aerial: ticked('#aiAerial'), done: ticked('#aiDone'), other: ticked('#aiOther'), quoteFiles: ticked('#aiQuoteFiles'), contacts: ticked('#aiContacts'), money: ticked('#aiMoney'), household: ticked('#aiHousehold') }, say);
+    const zip = await exportForAi({ plans: ticked('#aiPlans'), aerial: ticked('#aiAerial'), spots: ticked('#aiSpots'), done: ticked('#aiDone'), other: ticked('#aiOther'), quoteFiles: ticked('#aiQuoteFiles'), contacts: ticked('#aiContacts'), money: ticked('#aiMoney'), household: ticked('#aiHousehold') }, say);
     download(fileBase() + '-for-ai.zip', zip, 'application/zip');
   }, 'Could not make the export: ');
 });

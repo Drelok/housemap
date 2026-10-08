@@ -14,6 +14,8 @@ const AI_PLAN_WIDTH = 1600; // pixels across an exported picture of a sheet
 // and the numbers on the pins come out large enough to read in the picture.
 const AI_PLAN_DRAWN = 900;
 const AI_PLAN_ASPECT = 0.7;
+const AI_SPOT_WIDTH = 24; // feet across a close-up of the plan around an issue's pin
+const AI_SPOT_PIXELS = 900; // pixels across that picture
 const NEAR_FIXTURE = 4; // feet within which a fixture is worth naming beside an issue
 
 // ---------- directions in words ----------
@@ -278,6 +280,8 @@ function issueBlock(i, o) {
     if (waiting) out.push(`  - ${waiting === 1 ? 'One more photo is' : `${waiting} more photos are`} planned for this issue but not taken yet.`);
   } else {
     out.push('- **Photos:** none');
+    const spot = o.spotNames?.get(i.id);
+    if (spot) out.push(`- **Close-up of the plan:** \`${spot}\`, the plan for ${AI_SPOT_WIDTH / 2} ft around its pin, which is shown selected, with a dark ring`);
   }
   return out.join('\n');
 }
@@ -311,7 +315,15 @@ function openingsWords(f, r) {
 function houseWords() {
   const out = [`- **Name:** ${plan.name}`];
   if (plan.address) out.push(`- **Address:** ${plan.address}`);
-  out.push(`- **Total house area:** ${sqft(houseArea())} (rooms above ground plus finished basement rooms, as drawn)`);
+  // Listings and appraisals give the floors above ground and a finished basement separately, so
+  // the brief does too.
+  if (plan.floors.some((f) => f.basement)) {
+    out.push(`- **Above ground:** ${sqft(aboveArea())} (the floors above ground, as drawn)`);
+    out.push(`- **Finished basement:** ${sqft(finishedBasementArea())}${unfinishedBasementArea() ? `; the rest of the basement, ${sqft(unfinishedBasementArea())}, is unfinished` : ''}`);
+    out.push(`- **Total of the two:** ${sqft(houseArea())}. Listings and appraisals usually give the two figures separately rather than this total.`);
+  } else {
+    out.push(`- **Total house area:** ${sqft(houseArea())} (the floors above ground, as drawn)`);
+  }
   const size = (r) => (isPoly(r) ? sqft(shapeArea(r)) : `${fmtLen(r.w)} by ${fmtLen(r.h)}, ${sqft(shapeArea(r))}`);
   for (const f of plan.floors) {
     if (!f.rooms.length && !f.items.length) continue;
@@ -460,6 +472,36 @@ async function sheetPictures(onStep) {
   return out;
 }
 
+// A close-up of the plan around the pin of each issue given, for issues with no photo to show where
+// they are: [{ issue, name, data }]. The pin is drawn selected, so it stands out.
+async function spotPictures(issues, onStep) {
+  const keep = { floorId, sel, view: { ...view }, layers: { ...layers } };
+  const out = [];
+  Object.assign(layers, { names: true, items: true, issues: true, photos: false });
+  printWidth = AI_SPOT_PIXELS;
+  printAspect = AI_PLAN_ASPECT;
+  try {
+    for (const [n, i] of issues.entries()) {
+      onStep(`Close-up ${n + 1} of ${issues.length}…`);
+      floorId = i.floorId;
+      sel = { type: 'issue', id: i.id };
+      const w = AI_SPOT_WIDTH;
+      view = { x: i.x - w / 2, y: i.y - (w * AI_PLAN_ASPECT) / 2, w };
+      renderCanvas();
+      const name = `plans/issue-${String(issueNum(i)).padStart(2, '0')}-close-up.png`;
+      out.push({ issue: i, name, data: await sheetPicture(AI_SPOT_PIXELS, Math.round(AI_SPOT_PIXELS * AI_PLAN_ASPECT)) });
+    }
+  } finally {
+    printWidth = 0;
+    printAspect = 0;
+    ({ floorId, sel } = keep);
+    view = keep.view;
+    Object.assign(layers, keep.layers);
+    renderAll();
+  }
+  return out;
+}
+
 // ---------- the export ----------
 
 // One photo as it goes into the export: a small JPEG, or null for a kind of picture the browser
@@ -503,6 +545,13 @@ async function exportForAi(o, onStep = () => {}) {
     }
   }
   if (o.plans) entries.push(...await sheetPictures(onStep));
+  // Issues with nothing to show them get a close-up of the plan around their pin instead.
+  if (o.spots) {
+    const bare = issues.filter((i) => pinned(i) && !issueShots(i).length);
+    const spots = await spotPictures(bare, onStep);
+    o = { ...o, spotNames: new Map(spots.map((v) => [v.issue.id, v.name])) };
+    entries.push(...spots.map(({ name, data }) => ({ name, data })));
+  }
   // The aerial picture, as a small copy like the photos. It is not turned, so its top is the top
   // of the plan pictures.
   if (o.aerial && plan.aerial?.file) {

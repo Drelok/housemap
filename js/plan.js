@@ -252,6 +252,11 @@ const countedArea = (f) => (f.basement ? f.rooms.reduce((a, r) => a + (r.finishe
 // The whole house: what counts on every floor sheet. The exterior sheet holds the outline of the
 // house, not rooms, so its footprint is not added in.
 const houseArea = () => plan.floors.reduce((a, f) => a + (f.kind === 'floor' ? countedArea(f) : 0), 0);
+// Its parts, which listings and appraisals give separately: the floors above ground, the finished
+// basement, and the rest of the basement, which is not counted at all.
+const aboveArea = () => plan.floors.reduce((a, f) => a + (f.kind === 'floor' && !f.basement ? floorArea(f) : 0), 0);
+const finishedBasementArea = () => plan.floors.reduce((a, f) => a + (f.basement ? countedArea(f) : 0), 0);
+const unfinishedBasementArea = () => plan.floors.reduce((a, f) => a + (f.basement ? floorArea(f) - countedArea(f) : 0), 0);
 const separateArea = (f) => f.rooms.reduce((a, r) => a + (r.separate ? shapeArea(r) : 0), 0);
 // What an issue is expected to cost. The owner's own estimate is a guess, as a range; once a
 // quote has been accepted, that is the cost instead, with no range. More than one accepted quote,

@@ -172,6 +172,7 @@ function renderInspector() {
         : `${f.rooms.length} rooms drawn`}</p>
       <p class="muted areas">${f.kind === 'exterior' ? 'Footprint' : 'Floor area'}: <b>${sqft(floorArea(f))}</b>${f.basement ? `, of which finished: <b>${sqft(countedArea(f))}</b>` : ''}
         <br>Total House Area: <b>${sqft(houseArea())}</b> <span title="The rooms drawn on every floor above ground, plus the basement rooms marked as finished. The exterior sheet's footprint, unfinished basement rooms and anything marked as a separate structure are left out.">(${plan.floors.some((x) => x.basement) ? 'floors above ground, plus finished basement' : 'all floors'})</span>
+        ${plan.floors.some((x) => x.basement) ? `<br>Above ground: <b>${sqft(aboveArea())}</b> · Finished basement: <b>${sqft(finishedBasementArea())}</b>${unfinishedBasementArea() ? ` · Unfinished basement: ${sqft(unfinishedBasementArea())}, not counted` : ''}` : ''}
         ${separateArea(f) ? `<br>Separate structures on this sheet: ${sqft(separateArea(f))}, not counted` : ''}</p>
       ${f.kind === 'exterior' ? sizedHtml() : standardsHtml()}
       ${f.kind !== 'exterior' && f.rooms.length ? '<div class="actions"><button id="btnAddWalls" title="For rooms drawn edge to edge: moves their walls back so that a standard wall fits between them, and inside the exterior outline">Put walls between touching rooms…</button></div>' : ''}
