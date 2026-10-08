@@ -69,7 +69,7 @@ function reportHtml(issues, withPhotos) {
     const shots = withPhotos ? phasedShots(i) : [];
     const where = [issuePlace(i), room?.name, cat(i.category).label, i.status, issueCost(i).quoted ? `Accepted quote ${money(issueCost(i).low)}` : unpriced(i) ? 'Not priced' : `My estimate ${estimateText(i)}`].filter(Boolean);
     const more = ISSUE_MORE.filter(([key]) => i[key]).map(([key, label, kind]) => `${label} ${Array.isArray(kind) ? kind.find(([v]) => v === i[key])?.[1] || i[key] : i[key]}`);
-    const quote = (q) => [quoteLine(q), q.number && '#' + q.number, q.date, q.phone, q.email].filter(Boolean).map(esc).join(' · ');
+    const quote = (q) => [quoteLine(q), q.number && '#' + q.number, q.date, q.phone, q.email, q.rating && `rated ${starsText(q.rating)}`].filter(Boolean).map(esc).join(' · ');
     return `<article class="issue${i.status === 'Done' ? ' done' : ''}">
       <h2><span class="dot" style="background:${cat(i.category).color}"></span>#${issueNum(i)} ${esc(i.title)}</h2>
       <p class="sub">${where.map(esc).join(' · ')}</p>

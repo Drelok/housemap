@@ -227,6 +227,8 @@ function quoteWords(q, withContacts) {
     q.warranty && `warranty: ${lines(q.warranty)}`,
     q.scope && `includes: ${lines(q.scope)}`,
     q.notes && `notes: ${lines(q.notes)}`,
+    q.rating && `the owner's rating of the company: ${q.rating} of 5`,
+    q.review && `how it went, in the owner's words: ${lines(q.review)}`,
     q.doc && `file: ${baseOf(q.doc)}`,
     ...(withContacts ? [q.contact && `contact: ${q.contact}`, q.phone && `phone ${q.phone}`, q.email && `email ${q.email}`, q.address && `address or website: ${q.address}`, q.license && `license or insurance ${q.license}`] : []),
   ];

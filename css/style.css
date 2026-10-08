@@ -392,6 +392,12 @@ dialog label.check { margin-top: 12px; color: #222; font-size: 14px; }
 .quote[open] summary span::before { content: '▾ '; }
 .quote[open] { padding: 0 8px 2px; }
 .quote[open] summary { margin-left: -8px; margin-right: -8px; }
+.quote summary i.rated { font-style: normal; color: #b8860b; letter-spacing: 1px; }
+.stars { display: flex; align-items: center; gap: 2px; margin: 2px 0 6px; }
+.stars button.star { padding: 0 2px; border: none; background: none; font-size: 22px; line-height: 1; color: #b5b5b5; cursor: pointer; }
+.stars button.star.on { color: #d4a017; }
+.stars button.star:hover { color: #b8860b; }
+.stars .small { margin-left: 8px; }
 .issueCard .quotes { color: #24476b; }
 .issueCard .side small { margin-bottom: -6px; }
 

@@ -207,6 +207,18 @@ function phasedShots(i) {
   return shots.sort((a, b) => (a.phase === 'after') - (b.phase === 'after'));
 }
 const quoteName = (q) => q.company || q.contact || 'Unnamed company';
+const STARS = 5;
+const starsText = (n) => '★'.repeat(n) + '☆'.repeat(STARS - n);
+
+// The owner's own rating of a company, from one to five stars, and notes on how it went with
+// them, kept on the quote as `rating` and `review`. No star is lit until one is chosen; choosing
+// the lit one again takes the rating off.
+function ratingHtml(q) {
+  const stars = Array.from({ length: STARS }, (_, n) => `<button type="button" class="star${n < (q.rating || 0) ? ' on' : ''}" data-q-rate="${q.id}" data-stars="${n + 1}" aria-label="${n + 1} of ${STARS}" title="${n + 1 === q.rating ? 'Take the rating off' : `${n + 1} of ${STARS}`}">${n < (q.rating || 0) ? '★' : '☆'}</button>`).join('');
+  return `<label>Your rating</label>
+      <div class="stars">${stars}<span class="muted small">${q.rating ? `${q.rating} of ${STARS}` : 'Not rated'}</span></div>
+      <label>How it went<textarea data-q="${q.id}" data-qf="review" placeholder="Did they turn up on time, keep it tidy, answer the phone, finish on budget? Would you hire them again?">${esc(q.review || '')}</textarea></label>`;
+}
 const quoteLine = (q) => `${quoteName(q)}: ${money(q.amount)}${q.status && q.status !== 'Received' ? ` (${q.status.toLowerCase()})` : ''}`;
 
 function quoteField(q, [key, label, kind]) {
@@ -222,8 +234,9 @@ function quoteField(q, [key, label, kind]) {
 // line, so that several of them do not push everything else out of sight.
 function quotesHtml(i) {
   const list = quotesOf(i).map((q) => `<details class="quote" data-quote="${q.id}"${q.id === quoteOpen ? ' open' : ''}>
-      <summary><span>${esc(quoteName(q))}</span><b>${money(q.amount)}</b></summary>
+      <summary><span>${esc(quoteName(q))}${q.rating ? ` <i class="rated" title="Your rating: ${q.rating} of ${STARS}">${starsText(q.rating)}</i>` : ''}</span><b>${money(q.amount)}</b></summary>
       ${QUOTE_FIELDS.map((row) => (row.length > 1 ? `<div class="row">${row.map((f) => quoteField(q, f)).join('')}</div>` : quoteField(q, row[0]))).join('')}
+      ${ratingHtml(q)}
       <label>The quote as a file</label>
       ${q.doc ? `<p class="muted path">${esc(q.doc)}</p>` : '<p class="muted small">A PDF, a scan or a photo of the quote. It is copied into the project’s <i>quotes</i> folder.</p>'}
       <div class="actions">
@@ -319,7 +332,7 @@ $('#inspector').addEventListener('input', (e) => {
   if (!q) return;
   const key = e.target.dataset.qf;
   q[key] = 'num' in e.target.dataset ? parseFloat(e.target.value) || 0 : e.target.value;
-  if (key === 'company' || key === 'contact') e.target.closest('.quote').querySelector('summary span').textContent = quoteName(q);
+  if (key === 'company' || key === 'contact') e.target.closest('.quote').querySelector('summary span').firstChild.textContent = quoteName(q) + (q.rating ? ' ' : '');
   if (key === 'amount') e.target.closest('.quote').querySelector('summary b').textContent = money(q.amount);
   // Accepting a quote, or changing what an accepted one comes to, changes what the issue costs.
   $('#quoteNote').hidden = !issueCost(selIssue()).quoted;
@@ -340,7 +353,14 @@ $('#inspector').addEventListener('click', (e) => {
   const i = selIssue();
   if (!i) return;
   if (e.target.id === 'btnAddQuote') return addQuote(i);
-  const { qOpen, qAttach, qRemove } = e.target.dataset;
+  const { qOpen, qAttach, qRemove, qRate, stars } = e.target.dataset;
+  if (qRate) {
+    const q = quoteById(qRate);
+    if (q.rating === +stars) delete q.rating;
+    else q.rating = +stars;
+    save();
+    return renderInspector();
+  }
   if (qOpen) openQuoteFile(quoteById(qOpen));
   if (qRemove) removeQuote(i, quoteById(qRemove));
   if (qAttach) {
