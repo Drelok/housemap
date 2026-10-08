@@ -5,6 +5,12 @@ A plain static web app with no build step. `js/load.js` loads the scripts in ord
 The one exception to matching lists is `js/tutorial.js`: it is loaded on demand, when the tutorial house is opened, so it is listed on
 its own in `sw.js` and not in `js/load.js`.
 
+## Preview
+
+`.github/workflows/pages.yml` publishes `main` on GitHub Pages and the branch being tested at `/preview/`. A push to a
+branch updates the preview. Under `/preview/` the app keeps its storage apart (`PREVIEW` in `js/store.js`): use
+`STORE_NAME`, `PROJECTS_DIR` and `SETTINGS_KEY` for anything stored in the browser, never a fixed name.
+
 ## UI conventions
 
 - Lengths are shown and typed in feet and inches.

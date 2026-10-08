@@ -25,7 +25,7 @@ const SETTINGS = [
     note: 'Photos are shrunk as they are copied into the project. The originals, where they came from, are never touched. Photos already in a project stay as they are.',
   },
 ];
-const SETTINGS_KEY = 'housemap.settings';
+const SETTINGS_KEY = PREVIEW ? 'housemap.preview.settings' : 'housemap.settings';
 
 // A browser can refuse storage, as some do for pages opened from disk; the settings then last
 // only until the page is closed.

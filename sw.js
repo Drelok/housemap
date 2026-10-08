@@ -4,7 +4,8 @@
 // tried first, so a connected browser runs the current files; the copy is only the fallback.
 // Nothing from a project (plans, photos, quotes) ever passes through here.
 
-const CACHE = 'housemap-app';
+// The preview of a change, published under /preview/, keeps its copy apart from the app's own.
+const CACHE = self.registration.scope.includes('/preview/') ? 'housemap-preview' : 'housemap-app';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',

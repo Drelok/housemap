@@ -1,0 +1,82 @@
+# Publishes the site on GitHub Pages: main at the usual address, and a branch being tested at
+# /preview/, so a change can be tried on a phone or tablet before it is merged.
+#
+# A push to main publishes main, with the most recently changed branch not yet merged into it as
+# the preview (or main again, if there is none). A push to any other branch asks for a publish
+# with that branch as the preview. The publish itself always runs on main, which is the only
+# branch GitHub Pages lets publish. It can also be run by hand from the Actions tab, naming the
+# branch to preview.
+
+name: Pages
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to publish at /preview/ (empty for the latest one not yet merged)
+        required: false
+        default: ''
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # A push to a branch other than main: start this workflow on main, with that branch named.
+  request:
+    if: github.event_name == 'push' && github.ref_name != 'main' && !github.event.deleted
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main -f branch="$GITHUB_REF_NAME"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  publish:
+    if: github.ref_name == 'main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Choose the branch to preview
+        id: pick
+        env:
+          ASKED: ${{ inputs.branch }}
+        run: |
+          git fetch --quiet origin '+refs/heads/*:refs/remotes/origin/*'
+          branch="$ASKED"
+          if [ -z "$branch" ]; then
+            branch=$(git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/remotes/origin \
+              | sed 's#^origin/##' | grep -vx -e main -e HEAD -e origin \
+              | while read -r b; do
+                  [ -n "$(git rev-list -1 "origin/main..origin/$b")" ] && echo "$b"
+                done | head -n 1)
+          fi
+          git rev-parse --verify --quiet "origin/${branch:-main}" > /dev/null || branch=''
+          echo "branch=${branch:-main}" >> "$GITHUB_OUTPUT"
+      - name: Put the site together
+        env:
+          BRANCH: ${{ steps.pick.outputs.branch }}
+        run: |
+          mkdir -p _site/preview
+          git archive origin/main | tar -x -C _site
+          git archive "origin/$BRANCH" | tar -x -C _site/preview
+          rm -rf _site/.github _site/preview/.github
+          printf '%s %s\n' "$BRANCH" "$(git rev-parse --short "origin/$BRANCH")" > _site/preview/branch.txt
+          echo "Published main at / and $BRANCH at /preview/" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

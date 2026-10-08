@@ -20,6 +20,14 @@ The app is hosted at **https://drelok.github.io/housemap/**, served by GitHub Pa
 
 An installed copy checks for a newer version each time it is opened with a connection, and falls back to the copy it kept when there is none.
 
+**Preview of a change.** A change being tested is published at **https://drelok.github.io/housemap/preview/**, so it can be tried in a browser, on a phone or on a tablet before it is merged, while the main address keeps running `main`. The workflow `.github/workflows/pages.yml` publishes both:
+- A push to any branch puts that branch at `/preview/`.
+- A push to `main` publishes `main`, with the most recently changed branch not yet merged as the preview.
+- It can also be run by hand from the Actions tab, naming a branch.
+- `preview/branch.txt` says which branch and commit the preview is.
+
+The preview keeps its own projects, list of recent projects, settings and offline copy, so nothing done there touches the real ones. It can be installed as an app of its own, and says *Preview* on its start page and in the tab's title. Pages has to be set to publish with GitHub Actions: *Settings* → *Pages* → *Source*: *GitHub Actions*.
+
 **What the page can reach.** In Chrome and Edge the app asks for one folder, and the browser limits it to that folder: it cannot read anything else on the computer, and the browser refuses system folders. The page carries a security policy that only runs scripts from the app's own files and blocks it from making network requests, which closes the usual ways for a plan or a photo to be sent anywhere. It is a second line of defence, not a guarantee, and it does not protect against the hosting account itself being taken over, so keep two-step sign-in on it; anyone who would rather not depend on a host can download the files and open `index.html` as above.
 
 **Phones and tablets.** A project made on a phone lives inside that browser, on that device. The app asks the browser to keep it, but clearing the browser's site data, or removing the installed app on an iPhone, deletes it. *File* → *Export project (.zip)* is the copy to keep, and the way to move a project to a computer: see *Moving a project* below. So that the copy is not forgotten, the start page shows beside each such project when it was last exported (*Last exported 23 days ago*, or *Never exported*), *Export project (.zip)* in the File menu says the same, and once a project with anything in it has gone more than 14 days without an export the File button is marked in yellow until it is exported again. A project started from an exported zip counts as not yet exported from where it now is.

@@ -762,7 +762,7 @@ $('#sideTabs').addEventListener('click', (e) => {
 
 function renderTitle() {
   $('#planTitle').textContent = plan.name;
-  document.title = plan.name + ' · House Map';
+  document.title = (PREVIEW ? 'Preview · ' : '') + plan.name + ' · House Map';
 }
 
 let flashTimer = null;
