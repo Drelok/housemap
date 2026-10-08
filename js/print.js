@@ -108,6 +108,7 @@ async function loadPrintPhotos(area) {
 function openPrint() {
   if (document.querySelector('dialog[open]')) return;
   $('#printSheets').value = onList() ? 'none' : floor().rooms.length ? 'this' : 'all';
+  showSummaryChoices();
   $('#printDialog').returnValue = '';
   $('#printDialog').showModal();
 }
@@ -119,9 +120,10 @@ $('#printDialog').addEventListener('close', async (e) => {
   const which = $('#printSheets').value;
   const floors = which === 'this' ? [floor()] : which === 'all' ? plan.floors.filter((f) => f.rooms.length || f.items.length) : [];
   const issues = $('#printIssues').checked ? plan.issues.filter((i) => !$('#printOpenOnly').checked || i.status !== 'Done') : null;
-  if (!floors.length && !issues) return tell(which === 'all' ? 'Nothing has been drawn on any sheet yet, and the issue report is not ticked, so there is nothing to print.' : 'Nothing was chosen to print.');
+  const summary = $('#printSummary').checked ? summaryHtml({ open: $('#printSummaryOpen').value, costs: $('#printSummaryCosts').checked }) : '';
+  if (!floors.length && !issues && !summary) return tell(which === 'all' ? 'Nothing has been drawn on any sheet yet, and the issue report is not ticked, so there is nothing to print.' : 'Nothing was chosen to print.');
   const area = $('#printArea');
-  area.innerHTML = planSheetsHtml(floors, $('#printMarkers').checked) + (issues ? reportHtml(issues, $('#printPhotos').checked) : '');
+  area.innerHTML = summary + planSheetsHtml(floors, $('#printMarkers').checked) + (issues ? reportHtml(issues, $('#printPhotos').checked) : '');
   await loadPrintPhotos(area);
   window.print();
 });

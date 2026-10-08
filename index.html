@@ -165,6 +165,7 @@ photos/processed/         placed photos, by floor and room</pre>
         <div class="bar">
           <h1>House</h1>
           <span class="muted">What is known about the house as a whole. It is saved as you type, and goes into <i>Export for AI</i>.</span>
+          <button type="button" id="btnHouseSummary" title="Prints this on one page, with the work done and the maintenance kept up, for an insurer or a buyer">Print summary…</button>
         </div>
         <div id="houseBody"></div>
       </div>
@@ -281,6 +282,17 @@ photos/processed/         placed photos, by floor and room</pre>
     </div>
     <div class="winBody">
       <p class="muted">Choose what to include. The browser's print window opens next. To get a PDF file, choose “Save as PDF” as the printer there.</p>
+      <label class="check"><input type="checkbox" id="printSummary"> House summary: one page with its size, how it is built, its systems and appliances and their ages, the work done and the maintenance kept up, for an insurer or a buyer</label>
+      <div id="printSummaryChoices" class="indent" hidden>
+        <label>Open issues on the summary
+          <select id="printSummaryOpen">
+            <option value="">Leave them off</option>
+            <option value="safety">Safety issues only</option>
+            <option value="all">All open issues</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="printSummaryCosts"> Show what work cost: accepted quotes for work done, and estimates for open issues</label>
+      </div>
       <label>Floor plans, one to a page
         <select id="printSheets">
           <option value="this">This sheet only</option>
